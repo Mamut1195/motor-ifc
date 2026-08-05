@@ -1,5 +1,6 @@
 import json
 import pytest
+import motor_ifc.ids_validation as ids_validation
 from motor_ifc.rpc import MAX_RPC_LINE_BYTES, handle_line
 
 def call(method,params=None,request_id=1):
@@ -76,10 +77,11 @@ def test_rpc_ids_validation_requires_exact_contained_paths(tmp_path):
     response=json.loads(handle_line(json.dumps(request),str(tmp_path)))
     assert response["error"]["code"]==-32602
 
-def test_rpc_ids_validation_returns_typed_runtime_unavailable(tmp_path):
+def test_rpc_ids_validation_returns_typed_runtime_unavailable(tmp_path,monkeypatch):
     (tmp_path/"model.ifc").write_text("IFC",encoding="utf-8")
     ids="""<ids xmlns="http://standards.buildingsmart.org/IDS"><info><title>T</title></info><specifications><specification name="S" ifcVersion="IFC4"><applicability/></specification></specifications></ids>"""
     (tmp_path/"requirements.ids").write_text(ids,encoding="utf-8")
+    monkeypatch.setattr(ids_validation,"runtime",lambda: (_ for _ in ()).throw(ids_validation.IdsRuntimeUnavailable()))
     request={"jsonrpc":"2.0","id":1,"method":"ids.validate.v1","params":{"ifc_path":"model.ifc","ids_path":"requirements.ids"}}
     response=json.loads(handle_line(json.dumps(request),str(tmp_path)))
     assert response["result"]["success"] is False
