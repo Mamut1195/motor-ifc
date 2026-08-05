@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "MepComponent": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "component",
+          "default": "component",
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "system": {
+          "enum": [
+            "hvac",
+            "plumbing",
+            "electrical"
+          ],
+          "title": "System",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "name",
+        "system"
+      ],
+      "title": "MepComponent",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "items": {
+        "$ref": "#/$defs/MepComponent"
+      },
+      "maxItems": 10000,
+      "title": "Components",
+      "type": "array"
+    },
+    "payload_version": {
+      "const": "mep.v1",
+      "default": "mep.v1",
+      "title": "Payload Version",
+      "type": "string"
+    }
+  },
+  "title": "MepPayload",
+  "type": "object"
+}

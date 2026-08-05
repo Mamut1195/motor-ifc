@@ -1,0 +1,63 @@
+{
+  "$defs": {
+    "StructuralMember": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "member",
+          "default": "member",
+          "title": "Kind",
+          "type": "string"
+        },
+        "member_type": {
+          "enum": [
+            "beam",
+            "column",
+            "plate",
+            "foundation"
+          ],
+          "title": "Member Type",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_id",
+        "name",
+        "member_type"
+      ],
+      "title": "StructuralMember",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "members": {
+      "items": {
+        "$ref": "#/$defs/StructuralMember"
+      },
+      "maxItems": 10000,
+      "title": "Members",
+      "type": "array"
+    },
+    "payload_version": {
+      "const": "structure.v1",
+      "default": "structure.v1",
+      "title": "Payload Version",
+      "type": "string"
+    }
+  },
+  "title": "StructurePayload",
+  "type": "object"
+}

@@ -1,0 +1,269 @@
+{
+  "$defs": {
+    "ArchitecturePayload": {
+      "additionalProperties": false,
+      "properties": {
+        "elements": {
+          "items": {
+            "$ref": "#/$defs/Wall"
+          },
+          "maxItems": 10000,
+          "title": "Elements",
+          "type": "array"
+        },
+        "elevation": {
+          "default": 0.0,
+          "maximum": 100000,
+          "minimum": -10000,
+          "title": "Elevation",
+          "type": "number"
+        },
+        "payload_version": {
+          "const": "architecture.v1",
+          "default": "architecture.v1",
+          "title": "Payload Version",
+          "type": "string"
+        },
+        "storey_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Storey Name",
+          "type": "string"
+        },
+        "storey_source_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Storey Source Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "storey_source_id",
+        "storey_name"
+      ],
+      "title": "ArchitecturePayload",
+      "type": "object"
+    },
+    "Authority": {
+      "additionalProperties": false,
+      "properties": {
+        "approved": {
+          "title": "Approved",
+          "type": "boolean"
+        },
+        "producer": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Producer",
+          "type": "string"
+        },
+        "ruleset_version": {
+          "maxLength": 50,
+          "minLength": 1,
+          "title": "Ruleset Version",
+          "type": "string"
+        },
+        "source_hash": {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "title": "Source Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "producer",
+        "ruleset_version",
+        "source_hash",
+        "approved"
+      ],
+      "title": "Authority",
+      "type": "object"
+    },
+    "CoordinateReference": {
+      "additionalProperties": false,
+      "properties": {
+        "crs": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Crs"
+        },
+        "name": {
+          "default": "local-engineering",
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "origin": {
+          "default": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Origin",
+          "type": "array"
+        },
+        "rotation_degrees": {
+          "default": 0.0,
+          "title": "Rotation Degrees",
+          "type": "number"
+        }
+      },
+      "title": "CoordinateReference",
+      "type": "object"
+    },
+    "Wall": {
+      "additionalProperties": false,
+      "properties": {
+        "height": {
+          "exclusiveMinimum": 0,
+          "maximum": 1000,
+          "title": "Height",
+          "type": "number"
+        },
+        "kind": {
+          "const": "wall",
+          "default": "wall",
+          "title": "Kind",
+          "type": "string"
+        },
+        "length": {
+          "exclusiveMinimum": 0,
+          "maximum": 10000,
+          "title": "Length",
+          "type": "number"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Source Id",
+          "type": "string"
+        },
+        "thickness": {
+          "exclusiveMinimum": 0,
+          "maximum": 10,
+          "title": "Thickness",
+          "type": "number"
+        },
+        "x": {
+          "default": 0.0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "default": 0.0,
+          "title": "Y",
+          "type": "number"
+        },
+        "z": {
+          "default": 0.0,
+          "title": "Z",
+          "type": "number"
+        }
+      },
+      "required": [
+        "source_id",
+        "name",
+        "length",
+        "thickness",
+        "height"
+      ],
+      "title": "Wall",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "authority": {
+      "$ref": "#/$defs/Authority"
+    },
+    "contract_version": {
+      "const": "authoring.v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "coordinate_reference": {
+      "$ref": "#/$defs/CoordinateReference"
+    },
+    "discipline": {
+      "const": "architecture",
+      "title": "Discipline",
+      "type": "string"
+    },
+    "federation_id": {
+      "format": "uuid",
+      "title": "Federation Id",
+      "type": "string"
+    },
+    "ifc_schema": {
+      "const": "IFC4",
+      "title": "Ifc Schema",
+      "type": "string"
+    },
+    "model_id": {
+      "format": "uuid",
+      "title": "Model Id",
+      "type": "string"
+    },
+    "payload": {
+      "$ref": "#/$defs/ArchitecturePayload"
+    },
+    "profile": {
+      "const": "building.architecture@1",
+      "title": "Profile",
+      "type": "string"
+    },
+    "revision": {
+      "maximum": 2147483647,
+      "minimum": 1,
+      "title": "Revision",
+      "type": "integer"
+    },
+    "units": {
+      "const": "SI",
+      "title": "Units",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract_version",
+    "ifc_schema",
+    "model_id",
+    "revision",
+    "federation_id",
+    "authority",
+    "units",
+    "coordinate_reference",
+    "profile",
+    "discipline",
+    "payload"
+  ],
+  "title": "ArchitectureEnvelope",
+  "type": "object"
+}

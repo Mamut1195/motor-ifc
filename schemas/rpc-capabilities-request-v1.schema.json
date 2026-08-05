@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "jsonrpc": {
+      "const": "2.0"
+    },
+    "method": {
+      "const": "engine.capabilities.v1"
+    },
+    "params": {
+      "maxProperties": 0,
+      "type": "object"
+    }
+  },
+  "required": [
+    "jsonrpc",
+    "id",
+    "method"
+  ],
+  "title": "JSON-RPC engine.capabilities.v1 request",
+  "type": "object"
+}
