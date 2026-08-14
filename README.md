@@ -1,10 +1,10 @@
 # motor-ifc
 
-`motor-ifc` is a private, deterministic compiler from approved MAMUT authority snapshots to IFC. It does **not** design buildings, size systems, infer missing engineering decisions, or execute arbitrary model code.
+`motor-ifc` is a deterministic compiler from approved MAMUT authority snapshots to IFC. It does **not** design buildings, size systems, infer missing engineering decisions, or execute arbitrary model code.
 
 ## Scope — read this before adopting
 
-Claims here are graduated by tier against measured evidence, never by aspiration. The full verdict lives in `docs_dev/STATUS.md`; the short version:
+Claims here are graduated by tier against measured evidence, never by aspiration:
 
 | Capability | Tier | State |
 |---|---|---|
@@ -12,9 +12,11 @@ Claims here are graduated by tier against measured evidence, never by aspiration
 | The same, on large models | L/XL | **Unevidenced.** Largest measured: 49 MB, 3,823 objects, ~1M nodes. |
 | IFC authoring (`authoring.compile.v1`) | — | **Narrow verticals only**, see the paragraph below. Not a general authoring engine. |
 | IDS validation (`ids.validate.v1`) | — | Real `ifctester` integration, exercised end to end by `tests/test_ids_validation_live.py` (marker `ids`). |
-| Geometry / viewer conversion | — | Caveated; see STATUS. |
+| Geometry / viewer conversion | — | Caveated: it produces a GLB, and its fidelity is not claimed. |
 
-This is **not** a universal BIM engine. What it would take to become a general IFC engine — geometric and spatial structure compilation, connected and typed MEP with materials and flow, and L/XL benchmarks without timeouts — is planned by waves in `docs_dev/ROADMAP.md` and is not done.
+Largest model measured end to end: 49 MB, 3,823 objects, ~1M normalized nodes. Anything beyond that is untested, not "expected to work".
+
+This is **not** a universal BIM engine. Becoming a general IFC engine would take geometric and spatial structure compilation, connected and typed MEP with materials and flow, and L/XL benchmarks without timeouts. None of that is done.
 
 Every path that stages a private snapshot needs `MOTOR_IFC_JOB_ROOT`. Leaving it unset means the system temp directory, which is a deliberate default for standalone library use; setting it to something unusable is an explicit `JOB_ROOT_UNAVAILABLE` error, never a silent fallback that puts the snapshot outside the sandbox you asked for.
 
@@ -136,3 +138,11 @@ Concurrency defaults to one active worker. `MOTOR_IFC_SUPERVISOR_MAX_WORKERS` ma
 Lifecycle records are compact JSON lines on stderr with an event name, an optional 12-character hash of the request ID, and bounded status fields. They never contain raw request bodies, paths, environment values, child stderr, exception text, or stacks. Worker stdout is capped at 1,000,001 bytes including its line terminator; worker stderr is capped at 65,536 bytes. Overflow terminates the child and returns `-32012` without forwarding child output. Supervisor stdout contains protocol response lines only. EOF stops admission, terminates all direct children with the same policy, suppresses unfinished shutdown responses, cleans up, and exits.
 
 See [`docs/adr`](docs/adr) for decisions and [`docs/PROVENANCE.md`](docs/PROVENANCE.md) for the clean-room boundary.
+
+## License
+
+Apache License 2.0 — see [`LICENSE`](LICENSE). Copyright 2026 MAMUT.
+
+Domain knowledge was translated, never copied, from private MAMUT
+applications; those repositories are not covered by this license and nothing
+was committed back to them. See `docs/PROVENANCE.md`.

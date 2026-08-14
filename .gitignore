@@ -16,3 +16,6 @@ build/
 benchmarks/results/
 reporte-motor-ifc-*.html
 auditoria-*.html
+
+# Internal working docs: status, roadmap, handoff, findings, task plan.
+docs_dev/

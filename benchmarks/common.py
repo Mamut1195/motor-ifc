@@ -20,7 +20,10 @@ from typing import Any
 
 REPO = Path(__file__).parents[1]
 CORPUS = REPO / "corpus"
-FIXTURES = Path(r"C:\Users\Jonnathan\OneDrive\Documentos\MAMUT SYSTEMS\elaboracion-de-presupuestos\product\ifc\tests\fixtures")
+# Extra IFC fixtures from the consuming application, which is a separate
+# private repository. Point MOTOR_IFC_BENCH_FIXTURES at its IFC test fixtures
+# to include them; without it the benchmarks run on `corpus/` alone.
+FIXTURES = Path(os.environ.get("MOTOR_IFC_BENCH_FIXTURES", CORPUS / "models"))
 
 
 def sha256(path: Path) -> str:

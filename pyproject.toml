@@ -8,7 +8,8 @@ dynamic = ["version"]
 description = "Deterministic, policy-gated IFC compiler for MAMUT authority snapshots"
 readme = "README.md"
 requires-python = ">=3.13"
-license = { text = "LicenseRef-Proprietary" }
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [{ name = "MAMUT" }]
 dependencies = ["pydantic>=2.12,<3"]
 
