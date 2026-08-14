@@ -1,0 +1,187 @@
+{
+  "artifact_filenames": [],
+  "contract_version": "reader-extraction.v2",
+  "diagnostics": [],
+  "entities": [
+    {
+      "description": null,
+      "global_id": "00000000000000000000E4",
+      "ifc_class": "IfcWall",
+      "name": "Oracle wall",
+      "object_type": null,
+      "quantity_sets": [
+        {
+          "description": null,
+          "global_id": "0000000000000000000008",
+          "method_of_measurement": "ORACLE-MM",
+          "name": "BaseQuantities",
+          "quantities": [
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityLength",
+              "name": "Length",
+              "normalized_value": 4.25,
+              "unit": {
+                "name": "METRE",
+                "prefix": "MILLI",
+                "source": "quantity",
+                "symbol": "mm",
+                "unit_type": "LENGTHUNIT"
+              },
+              "value": 4250.0,
+              "value_type": "IfcLengthMeasure"
+            },
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": "W*H",
+              "ifc_class": "IfcQuantityArea",
+              "name": "Area",
+              "normalized_value": 12.5,
+              "unit": {
+                "name": "SQUARE_METRE",
+                "prefix": null,
+                "source": "project",
+                "symbol": "m2",
+                "unit_type": "AREAUNIT"
+              },
+              "value": 12.5,
+              "value_type": "IfcAreaMeasure"
+            },
+            {
+              "components": [
+                {
+                  "components": [],
+                  "description": null,
+                  "discrimination": null,
+                  "formula": null,
+                  "ifc_class": "IfcQuantityLength",
+                  "name": "PartA",
+                  "normalized_value": 2.0,
+                  "unit": {
+                    "name": "METRE",
+                    "prefix": null,
+                    "source": "project",
+                    "symbol": "m",
+                    "unit_type": "LENGTHUNIT"
+                  },
+                  "value": 2.0,
+                  "value_type": "IfcLengthMeasure"
+                },
+                {
+                  "components": [],
+                  "description": null,
+                  "discrimination": null,
+                  "formula": null,
+                  "ifc_class": "IfcQuantityLength",
+                  "name": "PartB",
+                  "normalized_value": 2.25,
+                  "unit": {
+                    "name": "METRE",
+                    "prefix": null,
+                    "source": "project",
+                    "symbol": "m",
+                    "unit_type": "LENGTHUNIT"
+                  },
+                  "value": 2.25,
+                  "value_type": "IfcLengthMeasure"
+                }
+              ],
+              "description": null,
+              "discrimination": "layer",
+              "formula": null,
+              "ifc_class": "IfcPhysicalComplexQuantity",
+              "name": "Complex",
+              "normalized_value": null,
+              "unit": null,
+              "value": null,
+              "value_type": null
+            }
+          ],
+          "relation_global_id": "0000000000000000000002",
+          "shadowed_by_occurrence": false,
+          "source": "occurrence"
+        },
+        {
+          "description": null,
+          "global_id": "0000000000000000000009",
+          "method_of_measurement": null,
+          "name": "ExtraQuantities",
+          "quantities": [
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityLength",
+              "name": "Length",
+              "normalized_value": 9.0,
+              "unit": {
+                "name": "METRE",
+                "prefix": null,
+                "source": "project",
+                "symbol": "m",
+                "unit_type": "LENGTHUNIT"
+              },
+              "value": 9.0,
+              "value_type": "IfcLengthMeasure"
+            }
+          ],
+          "relation_global_id": "0000000000000000000003",
+          "shadowed_by_occurrence": false,
+          "source": "occurrence"
+        },
+        {
+          "description": null,
+          "global_id": "000000000000000000000A",
+          "method_of_measurement": null,
+          "name": "BaseQuantities",
+          "quantities": [
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityLength",
+              "name": "TypeLength",
+              "normalized_value": 4.0,
+              "unit": {
+                "name": "METRE",
+                "prefix": null,
+                "source": "project",
+                "symbol": "m",
+                "unit_type": "LENGTHUNIT"
+              },
+              "value": 4.0,
+              "value_type": "IfcLengthMeasure"
+            }
+          ],
+          "relation_global_id": null,
+          "shadowed_by_occurrence": true,
+          "source": "type"
+        }
+      ],
+      "tag": null
+    },
+    {
+      "description": null,
+      "global_id": "00000000000000000000E5",
+      "ifc_class": "IfcBuildingElementProxy",
+      "name": "Bare object",
+      "object_type": null,
+      "quantity_sets": [],
+      "tag": null
+    }
+  ],
+  "entity_count": 2,
+  "extraction_sha256": null,
+  "publication": "none",
+  "source_schema": "IFC4",
+  "source_sha256": "a0e01e2a5ddd5ea222d784a70d1185eb0e387da5e739e765777687428f9b6f3a",
+  "success": true,
+  "truncated": false
+}

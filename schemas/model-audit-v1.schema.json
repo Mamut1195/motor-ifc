@@ -1,0 +1,269 @@
+{
+  "$defs": {
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "integer"
+        },
+        "global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Global Id"
+        },
+        "ifc_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ifc Class"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Json Pointer"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Id"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "suggested_action": {
+          "title": "Suggested Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "stage",
+        "message",
+        "suggested_action"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "ModelDefect": {
+      "additionalProperties": false,
+      "properties": {
+        "attribute": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Attribute"
+        },
+        "global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Global Id"
+        },
+        "ifc_class": {
+          "title": "Ifc Class",
+          "type": "string"
+        },
+        "repair_strategy": {
+          "enum": [
+            "drop-instance",
+            "manual"
+          ],
+          "title": "Repair Strategy",
+          "type": "string"
+        },
+        "rule": {
+          "enum": [
+            "missing-mandatory-attribute",
+            "schema-rule"
+          ],
+          "title": "Rule",
+          "type": "string"
+        },
+        "step_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Id"
+        }
+      },
+      "required": [
+        "ifc_class",
+        "rule",
+        "repair_strategy"
+      ],
+      "title": "ModelDefect",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_filenames": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Filenames",
+      "type": "array"
+    },
+    "contract_version": {
+      "const": "model-audit.v1",
+      "default": "model-audit.v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "defect_count": {
+      "default": 0,
+      "title": "Defect Count",
+      "type": "integer"
+    },
+    "defects": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ModelDefect"
+      },
+      "title": "Defects",
+      "type": "array"
+    },
+    "diagnostics": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "entity_counts": {
+      "additionalProperties": {
+        "type": "integer"
+      },
+      "title": "Entity Counts",
+      "type": "object"
+    },
+    "manual_count": {
+      "default": 0,
+      "title": "Manual Count",
+      "type": "integer"
+    },
+    "publication": {
+      "const": "none",
+      "default": "none",
+      "title": "Publication",
+      "type": "string"
+    },
+    "repairable": {
+      "default": false,
+      "title": "Repairable",
+      "type": "boolean"
+    },
+    "repairable_count": {
+      "default": 0,
+      "title": "Repairable Count",
+      "type": "integer"
+    },
+    "source_schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Schema"
+    },
+    "source_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Sha256"
+    },
+    "success": {
+      "title": "Success",
+      "type": "boolean"
+    },
+    "truncated": {
+      "const": false,
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+    },
+    "valid": {
+      "default": false,
+      "title": "Valid",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "success"
+  ],
+  "title": "ModelAuditResult",
+  "type": "object"
+}

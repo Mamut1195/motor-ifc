@@ -1,0 +1,147 @@
+{
+  "artifact_filenames": [],
+  "contract_version": "reader-extraction.v2",
+  "diagnostics": [],
+  "entities": [
+    {
+      "description": null,
+      "global_id": "0000000000000000000001",
+      "ifc_class": "IfcProject",
+      "name": "Corpus project",
+      "object_type": null,
+      "quantity_sets": [],
+      "tag": null
+    },
+    {
+      "description": null,
+      "global_id": "00000000000000000000E4",
+      "ifc_class": "IfcWall",
+      "name": "Oracle wall",
+      "object_type": null,
+      "quantity_sets": [
+        {
+          "description": null,
+          "global_id": "0000000000000000000008",
+          "method_of_measurement": "ORACLE-MM",
+          "name": "BaseQuantities",
+          "quantities": [
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityLength",
+              "name": "Length",
+              "normalized_value": 4.25,
+              "unit": {
+                "name": "METRE",
+                "prefix": "MILLI",
+                "source": "quantity",
+                "symbol": "mm",
+                "unit_type": "LENGTHUNIT"
+              },
+              "value": 4250.0,
+              "value_type": "IfcLengthMeasure"
+            },
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityArea",
+              "name": "Area",
+              "normalized_value": 12.5,
+              "unit": {
+                "name": "SQUARE_METRE",
+                "prefix": null,
+                "source": "project",
+                "symbol": "m2",
+                "unit_type": "AREAUNIT"
+              },
+              "value": 12.5,
+              "value_type": "IfcAreaMeasure"
+            }
+          ],
+          "relation_global_id": "0000000000000000000002",
+          "shadowed_by_occurrence": false,
+          "source": "occurrence"
+        },
+        {
+          "description": null,
+          "global_id": "0000000000000000000009",
+          "method_of_measurement": null,
+          "name": "ExtraQuantities",
+          "quantities": [
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityLength",
+              "name": "Length",
+              "normalized_value": 9.0,
+              "unit": {
+                "name": "METRE",
+                "prefix": null,
+                "source": "project",
+                "symbol": "m",
+                "unit_type": "LENGTHUNIT"
+              },
+              "value": 9.0,
+              "value_type": "IfcLengthMeasure"
+            }
+          ],
+          "relation_global_id": "0000000000000000000003",
+          "shadowed_by_occurrence": false,
+          "source": "occurrence"
+        },
+        {
+          "description": null,
+          "global_id": "000000000000000000000A",
+          "method_of_measurement": null,
+          "name": "BaseQuantities",
+          "quantities": [
+            {
+              "components": [],
+              "description": null,
+              "discrimination": null,
+              "formula": null,
+              "ifc_class": "IfcQuantityLength",
+              "name": "TypeLength",
+              "normalized_value": 4.0,
+              "unit": {
+                "name": "METRE",
+                "prefix": null,
+                "source": "project",
+                "symbol": "m",
+                "unit_type": "LENGTHUNIT"
+              },
+              "value": 4.0,
+              "value_type": "IfcLengthMeasure"
+            }
+          ],
+          "relation_global_id": null,
+          "shadowed_by_occurrence": true,
+          "source": "type"
+        }
+      ],
+      "tag": null
+    },
+    {
+      "description": null,
+      "global_id": "00000000000000000000E5",
+      "ifc_class": "IfcBuildingElementProxy",
+      "name": "Bare object",
+      "object_type": null,
+      "quantity_sets": [],
+      "tag": null
+    }
+  ],
+  "entity_count": 3,
+  "extraction_sha256": null,
+  "publication": "none",
+  "source_schema": "IFC2X3",
+  "source_sha256": "175d45b5c002391cad6fa4892226f0decf2c7cd0f500c2b833d2d76bceb9b953",
+  "success": true,
+  "truncated": false
+}

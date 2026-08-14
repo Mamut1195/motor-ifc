@@ -68,3 +68,36 @@ def rpc_input(job_root: str|Path, relative: str, max_bytes: int) -> Path:
     try: resolved.relative_to(root)
     except ValueError as exc: raise UnsafePathError("RPC input escapes the job root") from exc
     return resolved
+
+class JobRootUnavailable(RuntimeError):
+    """A job root was configured and cannot be used.
+
+    Distinct from no job root at all. Configuring one is a request for
+    containment; if it cannot be honoured, falling back means passing
+    dir=None to tempfile, which is the system %TEMP% — and the private
+    snapshot of the whole model, up to MAX_IFC_BYTES, lands outside the
+    sandbox the caller asked for, with nothing said about it. A promise that
+    cannot be kept is an explicit error, never a quiet degradation.
+    """
+
+
+def temp_root() -> Path|None:
+    """The contained temp directory, or None when no job root is configured.
+
+    None means the caller never asked for containment and the system default
+    applies. It never means "containment was requested and quietly dropped":
+    that raises JobRootUnavailable.
+    """
+    configured=os.environ.get("MOTOR_IFC_JOB_ROOT")
+    if not configured: return None
+    try:
+        root=Path(configured)
+        if not root.is_dir() or _is_reparse(root):
+            raise JobRootUnavailable("MOTOR_IFC_JOB_ROOT is not a usable directory")
+        target=root.resolve(strict=True)/".tmp.motor-ifc"
+        target.mkdir(exist_ok=True)
+        if not target.is_dir() or _is_reparse(target):
+            raise JobRootUnavailable("the job root temp directory is not usable")
+        return target
+    except OSError as exc:
+        raise JobRootUnavailable("the job root could not be prepared") from exc

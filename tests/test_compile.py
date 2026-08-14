@@ -48,6 +48,28 @@ def test_compile_reopen_and_atomic_artifacts(architecture_snapshot,tmp_path):
 
 
 @pytest.mark.ifcopenshell
+def test_compile_namespaces_global_ids_by_model_and_authority(architecture_snapshot,tmp_path):
+    pytest.importorskip("ifcopenshell")
+    other_model=deepcopy(architecture_snapshot); other_model["model_id"]="33333333-3333-3333-3333-333333333333"
+    other_authority=deepcopy(architecture_snapshot); other_authority["authority"]["producer"]="other-authority"
+    later_revision=deepcopy(architecture_snapshot); later_revision["revision"]=2
+    other_ruleset=deepcopy(architecture_snapshot); other_ruleset["authority"]["ruleset_version"]="2.0.0"
+    other_source=deepcopy(architecture_snapshot); other_source["authority"]["source_hash"]="sha256:"+"b"*64
+    base=compile_snapshot(architecture_snapshot,tmp_path/"base")
+    model_scoped=compile_snapshot(other_model,tmp_path/"other-model")
+    authority_scoped=compile_snapshot(other_authority,tmp_path/"other-authority")
+    stable_revision=compile_snapshot(later_revision,tmp_path/"later-revision")
+    stable_ruleset=compile_snapshot(other_ruleset,tmp_path/"other-ruleset")
+    stable_source=compile_snapshot(other_source,tmp_path/"other-source")
+    assert all(result.success for result in (base,model_scoped,authority_scoped,stable_revision,stable_ruleset,stable_source))
+    assert base.source_map["wall-1"]!=model_scoped.source_map["wall-1"]
+    assert base.source_map["wall-1"]!=authority_scoped.source_map["wall-1"]
+    assert base.source_map["wall-1"]==stable_revision.source_map["wall-1"]
+    assert base.source_map["wall-1"]==stable_ruleset.source_map["wall-1"]
+    assert base.source_map["wall-1"]==stable_source.source_map["wall-1"]
+
+
+@pytest.mark.ifcopenshell
 def test_compile_structure_type_only_members(structure_snapshot,tmp_path):
     ifc=pytest.importorskip("ifcopenshell")
     result=compile_snapshot(structure_snapshot,tmp_path/"job")

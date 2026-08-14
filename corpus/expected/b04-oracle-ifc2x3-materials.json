@@ -1,0 +1,100 @@
+{
+  "artifact_filenames": [],
+  "contract_version": "reader-extraction.v2",
+  "diagnostics": [],
+  "entities": [
+    {
+      "description": null,
+      "global_id": "0000000000000000000001",
+      "ifc_class": "IfcProject",
+      "material_associations": [],
+      "name": "Corpus project",
+      "object_type": null,
+      "tag": null
+    },
+    {
+      "description": null,
+      "global_id": "00000000000000000000E4",
+      "ifc_class": "IfcWall",
+      "material_associations": [
+        {
+          "category": null,
+          "constituents": [],
+          "description": null,
+          "kind": "material",
+          "layers": [],
+          "materials": [],
+          "name": "Concrete",
+          "profiles": [],
+          "relation_global_id": "0000000000000000000005",
+          "source": "occurrence",
+          "usage_direction": null,
+          "usage_offset": null
+        },
+        {
+          "category": null,
+          "constituents": [],
+          "description": null,
+          "kind": "layer_set",
+          "layers": [
+            {
+              "category": null,
+              "is_ventilated": false,
+              "material_name": "Steel",
+              "priority": null,
+              "thickness": 0.2
+            },
+            {
+              "category": null,
+              "is_ventilated": "UNKNOWN",
+              "material_name": "Concrete",
+              "priority": null,
+              "thickness": 0.1
+            }
+          ],
+          "materials": [],
+          "name": "OracleLayers",
+          "profiles": [],
+          "relation_global_id": "0000000000000000000006",
+          "source": "type",
+          "usage_direction": null,
+          "usage_offset": null
+        }
+      ],
+      "name": "Oracle wall",
+      "object_type": null,
+      "tag": null
+    },
+    {
+      "description": null,
+      "global_id": "00000000000000000000E5",
+      "ifc_class": "IfcBuildingElementProxy",
+      "material_associations": [
+        {
+          "category": null,
+          "constituents": [],
+          "description": null,
+          "kind": "material",
+          "layers": [],
+          "materials": [],
+          "name": "Cement",
+          "profiles": [],
+          "relation_global_id": "0000000000000000000007",
+          "source": "occurrence",
+          "usage_direction": null,
+          "usage_offset": null
+        }
+      ],
+      "name": "Bare object",
+      "object_type": null,
+      "tag": null
+    }
+  ],
+  "entity_count": 3,
+  "extraction_sha256": null,
+  "publication": "none",
+  "source_schema": "IFC2X3",
+  "source_sha256": "175d45b5c002391cad6fa4892226f0decf2c7cd0f500c2b833d2d76bceb9b953",
+  "success": true,
+  "truncated": false
+}

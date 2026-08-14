@@ -1,17 +1,21 @@
 import ctypes
+import hashlib
 import io
 import json
 import os
 from pathlib import Path
 import queue
+import stat
 import subprocess
 import sys
 import threading
 import time
+import uuid
 
 import pytest
 
-from motor_ifc.supervisor import Supervisor
+import motor_ifc.supervisor as supervisor_module
+from motor_ifc.supervisor import Supervisor, recover_job_root
 
 
 ROOT = Path(__file__).parents[1]
@@ -159,6 +163,58 @@ def test_supervisor_executes_reader_method_without_special_case(harnesses, tmp_p
     assert response["result"]["success"] is False
     assert response["result"]["diagnostics"][0]["code"] == 2800
     harness.close()
+
+
+def make_dense_ifc(path, walls):
+    ifc = pytest.importorskip("ifcopenshell")
+    model = ifc.file(schema="IFC4")
+    guid = ifc.guid.new
+    point = model.create_entity("IfcCartesianPoint", Coordinates=[0.0, 0.0, 0.0])
+    axis = model.create_entity("IfcAxis2Placement3D", Location=point)
+    context = model.create_entity(
+        "IfcGeometricRepresentationContext", ContextType="Model", CoordinateSpaceDimension=3, WorldCoordinateSystem=axis
+    )
+    assignment = model.create_entity("IfcUnitAssignment", Units=[model.create_entity("IfcSIUnit", UnitType="LENGTHUNIT", Name="METRE")])
+    model.create_entity("IfcProject", GlobalId=guid(), Name="Project", RepresentationContexts=[context], UnitsInContext=assignment)
+    for index in range(walls):
+        wall = model.create_entity("IfcWall", GlobalId=ifc.guid.compress(uuid.UUID(int=index).hex), Name=f"Wall {index}")
+        quantities = [
+            model.create_entity("IfcQuantityLength", Name=f"Length {slot}", LengthValue=float(index + slot)) for slot in range(10)
+        ]
+        qset = model.create_entity("IfcElementQuantity", GlobalId=guid(), Name=f"Qto {index}", Quantities=quantities)
+        model.create_entity("IfcRelDefinesByProperties", GlobalId=guid(), RelatedObjects=[wall], RelatingPropertyDefinition=qset)
+    model.write(str(path))
+
+
+@pytest.mark.ifcopenshell
+def test_supervisor_transports_large_reader_result_as_publication(harnesses, tmp_path):
+    make_dense_ifc(tmp_path / "dense.ifc", walls=400)
+    harness = start(harnesses, tmp_path, test_worker=False, env_extra={"MOTOR_IFC_JOB_ROOT": str(tmp_path)})
+    # Inline mode is bounded by the reader itself: typed failure instead of a transport death.
+    harness.send("reader.extract.v2", "inline", {"ifc_path": "dense.ifc"})
+    inline = harness.response(timeout=60)
+    assert inline["id"] == "inline"
+    assert inline["result"]["success"] is False
+    assert inline["result"]["diagnostics"][0]["code"] == 2003
+    assert "output_dir" in inline["result"]["diagnostics"][0]["suggested_action"]
+    # The same extraction publishes a bounded artifact and the response stays small.
+    harness.send("reader.extract.v2", "published", {"ifc_path": "dense.ifc", "output_dir": "published"})
+    published = harness.response(timeout=60)
+    assert published["id"] == "published"
+    assert published["result"]["success"] is True
+    assert published["result"]["publication"] == "immutable-directory"
+    assert published["result"]["entity_count"] == 400
+    assert len(json.dumps(published, separators=(",", ":"))) < 10_000
+    extraction = tmp_path / "published" / "extraction.json"
+    manifest = tmp_path / "published" / "extraction-manifest.json"
+    assert extraction.is_file() and manifest.is_file()
+    assert published["result"]["extraction_sha256"] == hashlib.sha256(extraction.read_bytes()).hexdigest()
+    document = json.loads(extraction.read_text(encoding="utf-8"))
+    assert document["entity_count"] == 400
+    assert len(document["entities"]) == 400
+    stderr = harness.close()
+    assert harness.lines.empty()
+    assert all(json.loads(line)["event"] for line in stderr.splitlines())
 
 
 def test_protocol_errors_and_null_ids_do_not_spawn(harnesses, tmp_path):
@@ -396,3 +452,116 @@ def test_job_cancel_alias_ignores_unknown_and_stale_ids(harnesses, tmp_path):
         harness.lines.get(timeout=0.1)
     stderr = harness.close()
     assert stderr.count("cancellation_ignored") == 2
+
+
+def test_job_timeout_terminates_worker_with_typed_fault(harnesses, tmp_path):
+    harness = start(harnesses, tmp_path, env_extra={"MOTOR_IFC_SUPERVISOR_JOB_TIMEOUT_MS": "300"})
+    harness.send("test.slow", "late")
+    pid = harness.wait_for_pid()
+    started = time.monotonic()
+    response = harness.response(timeout=5)
+    assert response == {"jsonrpc": "2.0", "id": "late", "error": {"code": -32801, "message": "Job timed out"}}
+    assert time.monotonic() - started < 2.0
+    assert not process_is_active(pid)
+    stderr = harness.close()
+    events = [json.loads(line) for line in stderr.splitlines()]
+    timeout_event = next(event for event in events if event["event"] == "worker_timeout")
+    assert timeout_event["elapsed_ms"] >= 300
+    assert harness.lines.empty()
+
+
+@pytest.mark.parametrize("value", ["0", "abc", " 300", "100000000000"])
+def test_invalid_job_timeout_environment_exits_cleanly(harnesses, tmp_path, value):
+    harness = start(harnesses, tmp_path, env_extra={"MOTOR_IFC_SUPERVISOR_JOB_TIMEOUT_MS": value})
+    stderr = harness.close()
+    assert harness.process.returncode == 2
+    assert harness.lines.empty()
+    assert stderr == '{"event":"configuration_rejected"}\n'
+
+
+def test_rss_budget_terminates_worker_with_typed_fault(monkeypatch):
+    spawned = {}
+
+    def spawn_sleeper():
+        process = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(30)"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0,
+        )
+        spawned["process"] = process
+        return process
+
+    monkeypatch.setattr(supervisor_module, "_process_rss", lambda process: 2_000_000_000)
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    supervisor = Supervisor(1, stdout, stderr, _spawn=spawn_sleeper, job_timeout_ms=60_000, max_rss_bytes=1_000_000_000)
+    supervisor.submit('{"jsonrpc":"2.0","id":1,"method":"test.success"}')
+    deadline = time.monotonic() + 5
+    while not stdout.getvalue() and time.monotonic() < deadline:
+        time.sleep(0.01)
+    response = json.loads(stdout.getvalue().strip())
+    assert response == {"jsonrpc": "2.0", "id": 1, "error": {"code": -32802, "message": "Job exceeded resource budget"}}
+    events = [json.loads(line) for line in stderr.getvalue().splitlines()]
+    resource_event = next(event for event in events if event["event"] == "worker_resource")
+    assert resource_event["rss_peak"] >= 1_000_000_000
+    supervisor.shutdown()
+    assert spawned["process"].wait(timeout=5) is not None
+
+
+def test_recovery_removes_stage_and_temp_residue(tmp_path):
+    root = tmp_path / "jobroot"
+    nested = root / "a" / "b"
+    nested.mkdir(parents=True)
+    stage = root / "a" / ".out.stage-123"
+    stage.mkdir()
+    (stage / "extraction.json").write_text("{}", encoding="utf-8")
+    nested_stage = nested / ".deep.stage-9"
+    nested_stage.mkdir()
+    temp = root / ".tmp.motor-ifc"
+    (temp / "motor-ifc-reader-x").mkdir(parents=True)
+    keep_file = root / "input.ifc"
+    keep_file.write_text("IFC", encoding="ascii")
+    keep_dir = root / "results"
+    keep_dir.mkdir()
+    dot_other = root / ".hidden"
+    dot_other.mkdir()
+    assert recover_job_root(root) == 3
+    assert not stage.exists() and not nested_stage.exists() and not temp.exists()
+    assert keep_file.is_file() and keep_dir.is_dir() and dot_other.is_dir()
+    assert recover_job_root(root) == 0
+    assert recover_job_root(root / "missing") == 0
+
+
+def test_recovery_removes_readonly_snapshot_residue(tmp_path):
+    # Reader/repair snapshots are chmod'd read-only (security.py); on Windows a
+    # plain rmtree fails with WinError 5, so recovery must clear the bit.
+    root = tmp_path / "jobroot"
+    root.mkdir()
+    temp = root / ".tmp.motor-ifc"
+    snapshot = temp / "motor-ifc-reader-x"
+    snapshot.mkdir(parents=True)
+    snapshot_file = snapshot / "source.ifc"
+    snapshot_file.write_text("IFC", encoding="ascii")
+    snapshot_file.chmod(stat.S_IREAD)
+    try:
+        assert recover_job_root(root) == 1
+        assert not temp.exists()
+    finally:
+        if snapshot_file.exists():
+            snapshot_file.chmod(stat.S_IWRITE)
+
+
+def test_supervisor_recovers_job_root_residue_on_startup(harnesses, tmp_path):
+    stage = tmp_path / ".out.stage-dead"
+    stage.mkdir()
+    (stage / "partial.json").write_text("{}", encoding="utf-8")
+    temp = tmp_path / ".tmp.motor-ifc"
+    temp.mkdir()
+    harness = start(harnesses, tmp_path, test_worker=False, env_extra={"MOTOR_IFC_JOB_ROOT": str(tmp_path)})
+    harness.send("engine.capabilities.v1", "caps")
+    assert harness.response()["result"]["engine_version"] == "0.1.0"
+    assert not stage.exists() and not temp.exists()
+    stderr = harness.close()
+    assert any(json.loads(line).get("event") == "recovery" for line in stderr.splitlines())

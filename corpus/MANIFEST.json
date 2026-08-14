@@ -1,0 +1,220 @@
+{
+  "expected_sha256": {
+    "expected/b04-oracle-ifc2x3-materials.json": "c7d464eb9f040eac0ccbf049eee408b242791328724cffcee4faa84b7f40b568",
+    "expected/b04-oracle-ifc2x3-quantities.json": "e567e72562724b5d803f37b448d00f74d772a165ab0e3bcad50acafb1ad478ca",
+    "expected/b04-oracle-ifc4-materials.json": "40a1829d2dbcfd439f351bd98d7362ef07359bc7bc537e5248aafba2b73cea14",
+    "expected/b04-oracle-ifc4-quantities.json": "25bf2d4eb9ed83b86cb818e7e8bddefb955df691218c0a04c8511dbdb27af21e",
+    "expected/b04-oracle-ifc4x3-materials.json": "0b41b2e24ee919ec287b402a8dfb6395bdce3cff1a8b2ffae0e662c0e649dbb3",
+    "expected/b04-oracle-ifc4x3-quantities.json": "878ceb3775df2702eb586b62613d01e2da4ee41778d5803aa7eedef39e2f9390"
+  },
+  "models": [
+    {
+      "bytes": 225636,
+      "file": "models/b01-pcert-ifc4.ifc",
+      "id": "B01-pcert-ifc4",
+      "ifc_schema": "IFC4",
+      "kind": "official",
+      "license": "buildingSMART sample file",
+      "metrics": {
+        "IfcElementQuantity": 7,
+        "IfcMaterial": 9,
+        "IfcObject": 23,
+        "IfcPropertySet": 13,
+        "IfcRelAssociatesMaterial": 9
+      },
+      "sha256": "e390f9f9801cb7a65019547f92afec0887a01484c0f6f9d0f4908c5f382467a4",
+      "source": "buildingSMART Sample-Test-Files PCERT baseline (local copy from elaboracion-de-presupuestos fixtures)",
+      "status": "pinned"
+    },
+    {
+      "bytes": 2419,
+      "expected": [
+        "expected/b04-oracle-ifc4-quantities.json",
+        "expected/b04-oracle-ifc4-materials.json"
+      ],
+      "file": "models/b04-oracle-ifc4.ifc",
+      "generator": "corpus.generators.b04_oracle",
+      "id": "B04-oracle-ifc4",
+      "ifc_schema": "IFC4",
+      "kind": "oracle",
+      "license": "MAMUT internal",
+      "metrics": {
+        "IfcElementQuantity": 3,
+        "IfcMaterial": 2,
+        "IfcObject": 2,
+        "IfcPropertySet": 0,
+        "IfcRelAssociatesMaterial": 3
+      },
+      "sha256": "a0e01e2a5ddd5ea222d784a70d1185eb0e387da5e739e765777687428f9b6f3a",
+      "source": "generated (deterministic, header-normalized)",
+      "status": "pinned"
+    },
+    {
+      "bytes": 2258,
+      "expected": [
+        "expected/b04-oracle-ifc2x3-quantities.json",
+        "expected/b04-oracle-ifc2x3-materials.json"
+      ],
+      "file": "models/b04-oracle-ifc2x3.ifc",
+      "generator": "corpus.generators.b04_oracle",
+      "id": "B04-oracle-ifc2x3",
+      "ifc_schema": "IFC2X3",
+      "kind": "oracle",
+      "license": "MAMUT internal",
+      "metrics": {
+        "IfcElementQuantity": 3,
+        "IfcMaterial": 3,
+        "IfcObject": 3,
+        "IfcPropertySet": 0,
+        "IfcRelAssociatesMaterial": 3
+      },
+      "sha256": "175d45b5c002391cad6fa4892226f0decf2c7cd0f500c2b833d2d76bceb9b953",
+      "source": "generated (deterministic, header-normalized)",
+      "status": "pinned"
+    },
+    {
+      "bytes": 2426,
+      "expected": [
+        "expected/b04-oracle-ifc4x3-quantities.json",
+        "expected/b04-oracle-ifc4x3-materials.json"
+      ],
+      "file": "models/b04-oracle-ifc4x3.ifc",
+      "generator": "corpus.generators.b04_oracle",
+      "id": "B04-oracle-ifc4x3",
+      "ifc_schema": "IFC4X3",
+      "kind": "oracle",
+      "license": "MAMUT internal",
+      "metrics": {
+        "IfcElementQuantity": 3,
+        "IfcMaterial": 2,
+        "IfcObject": 2,
+        "IfcPropertySet": 0,
+        "IfcRelAssociatesMaterial": 3
+      },
+      "sha256": "0076d8fc31744f4ce03bff2a14e66b04d03fd6b1b918d5a8e27e20249a5be614",
+      "source": "generated (deterministic, header-normalized)",
+      "status": "pinned"
+    },
+    {
+      "bytes": 6635891,
+      "file": "models/b05-semantic-dense.ifc",
+      "generator": "corpus.generators.b05_semantic_dense",
+      "id": "B05-semantic-dense",
+      "ifc_schema": "IFC4",
+      "kind": "stress",
+      "license": "MAMUT internal",
+      "metrics": {
+        "IfcElementQuantity": 2000,
+        "IfcMaterial": 0,
+        "IfcObject": 2000,
+        "IfcPropertySet": 2000,
+        "IfcRelAssociatesMaterial": 0
+      },
+      "sha256": "f0404051b425969322c454de4328becb29c735391ded7655be52824084d69608",
+      "source": "generated (deterministic, header-normalized): 2000 walls x 40 qtos x 8 props, minimal geometry",
+      "status": "pinned"
+    },
+    {
+      "bytes": 1115759,
+      "file": "models/b06-relation-dense.ifc",
+      "generator": "corpus.generators.b06_relation_dense",
+      "id": "B06-relation-dense",
+      "ifc_schema": "IFC4",
+      "kind": "stress",
+      "license": "MAMUT internal",
+      "metrics": {
+        "IfcElementQuantity": 0,
+        "IfcMaterial": 0,
+        "IfcObject": 501,
+        "IfcPropertySet": 0,
+        "IfcRelAssociatesMaterial": 0
+      },
+      "sha256": "bdfd3859bf863c66fa37a70ecdf0aacbaa6750e6e217ca5c2370cde9398bcf8a",
+      "source": "generated (deterministic, header-normalized): 500 walls x 20 IfcRelSpaceBoundary fan-out",
+      "status": "pinned"
+    },
+    {
+      "bytes": 249295,
+      "file": "models/b07-geometry-dense.ifc",
+      "generator": "corpus.generators.b07_geometry_dense",
+      "id": "B07-geometry-dense",
+      "ifc_schema": "IFC4",
+      "kind": "stress",
+      "license": "MAMUT internal",
+      "metrics": {
+        "IfcElementQuantity": 0,
+        "IfcMaterial": 0,
+        "IfcObject": 100,
+        "IfcPropertySet": 0,
+        "IfcRelAssociatesMaterial": 0
+      },
+      "sha256": "0566fea3b559b951819378335878eb922b9be1a6a4bcf2cc6cde638e34a85193",
+      "source": "generated (deterministic, header-normalized): 100 walls with extrusions + 64-triangle face sets",
+      "status": "pinned"
+    },
+    {
+      "bytes": 2380763,
+      "file": "models/b02-community-ifc2x3.ifc",
+      "id": "B02-community-ifc2x3",
+      "ifc_schema": "IFC2X3",
+      "kind": "community",
+      "license": "community sample \u2014 verify upstream terms before external redistribution",
+      "metrics": {
+        "IfcElementQuantity": 21,
+        "IfcMaterial": 18,
+        "IfcObject": 296,
+        "IfcPropertySet": 1459,
+        "IfcRelAssociatesMaterial": 92
+      },
+      "sha256": "b347a2c8aa8fff6db896a4417a9c50c22ac0ccd7c5cfc22b99b8d29336c606ed",
+      "source": "buildingsmart-community/Community-Sample-Test-Files: IFC 2.3.0.1 (IFC 2x3)/Duplex Apartment/Duplex_A_20110907.ifc",
+      "status": "pinned"
+    },
+    {
+      "bytes": 2959580,
+      "file": "models/b03-community-ifc4.ifc",
+      "id": "B03-community-ifc4",
+      "ifc_schema": "IFC4",
+      "kind": "community",
+      "license": "community sample \u2014 verify upstream terms before external redistribution",
+      "metrics": {
+        "IfcElementQuantity": 532,
+        "IfcMaterial": 18,
+        "IfcObject": 609,
+        "IfcPropertySet": 1627,
+        "IfcRelAssociatesMaterial": 110
+      },
+      "sha256": "2c12c00c675e43fb872af8bec583c29e887e75a40c614d8585abcc2baf7590ed",
+      "source": "buildingsmart-community/Community-Sample-Test-Files: IFC 4.0.2.1 (IFC 4)/Example project location/example project location.ifc",
+      "status": "pinned"
+    },
+    {
+      "bytes": 10934237,
+      "id": "real-cand-11m",
+      "ifc_schema": "IFC4",
+      "kind": "real",
+      "note": "dirty in source (8 defective IfcRelSpaceBoundary); extract after model.repair.v1",
+      "sha256": "cfb2124497b25d9a72101075e84be0feb44ff669cb1bd3251be11efebeea945c",
+      "source": "elaboracion-de-presupuestos apps/ifc/tests/fixtures/CAND_aleman_11M.ifc",
+      "status": "pointer"
+    },
+    {
+      "bytes": 49286967,
+      "id": "real-schependomlaan-49m",
+      "ifc_schema": "IFC2X3",
+      "kind": "real",
+      "note": "dirty in source (1 defective IfcRelConnectsPathElements); extract after model.repair.v1",
+      "sha256": "2c3565ca1904f2aa61adab92024cf3755b2c5b21a498144d3094d7cb58cebec7",
+      "source": "elaboracion-de-presupuestos apps/ifc/tests/fixtures/IFC_Schependomlaan.ifc",
+      "status": "pointer"
+    },
+    {
+      "generator": "corpus.generators.b08_adversarial",
+      "id": "B08-adversarial",
+      "kind": "adversarial",
+      "source": "boundary and hostile-input builders (not pinned: each builder targets one documented bound)",
+      "status": "generated-at-test-time"
+    }
+  ],
+  "schema": "motor-ifc.corpus-manifest.v1"
+}

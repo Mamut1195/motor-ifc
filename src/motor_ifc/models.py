@@ -34,6 +34,8 @@ class Capabilities(FrozenModel):
     supervisor_max_workers: int = 0
     request_cancellation: bool = False
     reader_extraction_contract_versions: tuple[str, ...] = ()
+    model_audit_contract_versions: tuple[str, ...] = ()
+    model_repair_contract_versions: tuple[str, ...] = ()
 
 class ValidationResult(FrozenModel):
     valid: bool
@@ -128,7 +130,132 @@ class ReaderExtractionResult(FrozenModel):
     publication: Literal["none"] = "none"
     artifact_filenames: tuple[str, ...] = ()
 
+class ReaderUnit(FrozenModel):
+    source: Literal["quantity", "project", "unknown"]
+    name: str | None = None
+    symbol: str | None = None
+    prefix: str | None = None
+    unit_type: str | None = None
+
+class ReaderQuantity(FrozenModel):
+    name: str | None = None
+    description: str | None = None
+    ifc_class: str
+    formula: str | None = None
+    discrimination: str | None = None
+    value: bool | int | float | str | None = None
+    value_type: str | None = None
+    unit: ReaderUnit | None = None
+    normalized_value: float | None = None
+    components: tuple["ReaderQuantity", ...] = ()
+
+class ReaderQuantitySet(FrozenModel):
+    global_id: str | None = None
+    name: str | None = None
+    description: str | None = None
+    method_of_measurement: str | None = None
+    source: Literal["occurrence", "type"]
+    relation_global_id: str | None = None
+    shadowed_by_occurrence: bool = False
+    quantities: tuple[ReaderQuantity, ...] = ()
+
+class ReaderMaterialLayer(FrozenModel):
+    material_name: str | None = None
+    thickness: float | None = None
+    is_ventilated: bool | Literal["UNKNOWN"] | None = None
+    priority: int | None = None
+    category: str | None = None
+
+class ReaderMaterialProfile(FrozenModel):
+    name: str | None = None
+    material_name: str | None = None
+    category: str | None = None
+    priority: int | None = None
+
+class ReaderMaterialConstituent(FrozenModel):
+    name: str | None = None
+    description: str | None = None
+    category: str | None = None
+    fraction: float | None = None
+    material_name: str | None = None
+
+class ReaderMaterialAssociation(FrozenModel):
+    source: Literal["occurrence", "type"]
+    relation_global_id: str | None = None
+    kind: Literal["material", "material_list", "layer_set", "layer_set_usage", "profile_set", "profile_set_usage", "constituent_set"]
+    name: str | None = None
+    description: str | None = None
+    category: str | None = None
+    materials: tuple[str, ...] = ()
+    layers: tuple[ReaderMaterialLayer, ...] = ()
+    profiles: tuple[ReaderMaterialProfile, ...] = ()
+    constituents: tuple[ReaderMaterialConstituent, ...] = ()
+    usage_direction: str | None = None
+    usage_offset: float | None = None
+
+class ReaderEntityQuantitiesV2(ReaderEntityMetadata):
+    quantity_sets: tuple[ReaderQuantitySet, ...] = ()
+
+class ReaderEntityMaterialsV2(ReaderEntityMetadata):
+    material_associations: tuple[ReaderMaterialAssociation, ...] = ()
+
+class ReaderEntityV2(ReaderEntityMetadata):
+    properties: dict[str, Any] = Field(default_factory=dict)
+    quantity_sets: tuple[ReaderQuantitySet, ...] = ()
+    material_associations: tuple[ReaderMaterialAssociation, ...] = ()
+
+class ReaderExtractionResultV2(FrozenModel):
+    contract_version: Literal["reader-extraction.v2"] = "reader-extraction.v2"
+    success: bool
+    source_schema: str | None = None
+    entity_count: int = 0
+    entities: tuple[ReaderEntityMetadata | ReaderEntityProperties | ReaderEntityQuantitiesV2 | ReaderEntityMaterialsV2 | ReaderEntityV2, ...] = ()
+    diagnostics: tuple[Diagnostic, ...] = ()
+    truncated: Literal[False] = False
+    publication: Literal["none", "immutable-directory"] = "none"
+    artifact_filenames: tuple[str, ...] = ()
+    source_sha256: str | None = None
+    extraction_sha256: str | None = None
+
 class FederationResult(FrozenModel):
     success: bool
     diagnostics: tuple[Diagnostic, ...] = ()
     manifest: dict[str, Any] | None = None
+
+class ModelDefect(FrozenModel):
+    step_id: int | None = None
+    ifc_class: str
+    global_id: str | None = None
+    attribute: str | None = None
+    rule: Literal["missing-mandatory-attribute", "schema-rule"]
+    repair_strategy: Literal["drop-instance", "manual"]
+
+class ModelAuditResult(FrozenModel):
+    contract_version: Literal["model-audit.v1"] = "model-audit.v1"
+    success: bool
+    source_schema: str | None = None
+    source_sha256: str | None = None
+    valid: bool = False
+    defect_count: int = 0
+    repairable_count: int = 0
+    manual_count: int = 0
+    repairable: bool = False
+    defects: tuple[ModelDefect, ...] = ()
+    entity_counts: dict[str, int] = Field(default_factory=dict)
+    diagnostics: tuple[Diagnostic, ...] = ()
+    truncated: Literal[False] = False
+    publication: Literal["none"] = "none"
+    artifact_filenames: tuple[str, ...] = ()
+
+class ModelRepairResult(FrozenModel):
+    contract_version: Literal["model-repair.v1"] = "model-repair.v1"
+    success: bool
+    repaired: bool = False
+    defects_fixed: int = 0
+    fixes: tuple[ModelDefect, ...] = ()
+    remaining_defects: tuple[ModelDefect, ...] = ()
+    source_sha256: str | None = None
+    repaired_sha256: str | None = None
+    artifacts: dict[str, Path] = Field(default_factory=dict)
+    diagnostics: tuple[Diagnostic, ...] = ()
+    publication: Literal["none", "immutable-directory"] = "none"

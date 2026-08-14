@@ -1,5 +1,6 @@
 from copy import deepcopy
 import json
+from uuid import UUID
 import pytest
 from pydantic import TypeAdapter, ValidationError
 from motor_ifc import capabilities, validate_snapshot
@@ -35,9 +36,19 @@ def test_policy_rejects_unapproved_and_limits(architecture_snapshot):
     assert result.diagnostics[0].code==2003
 
 def test_deterministic_global_id_vector():
-    assert global_id("architecture","wall-1","wall")=="02aP2pavvGwgiC798dmGZ6"
-    assert global_id("architecture","wall-1","wall")==global_id("architecture","wall-1","wall")
-    assert global_id("architecture","wall-1","opening")!=global_id("architecture","wall-1","wall")
+    model_id=UUID("11111111-1111-1111-1111-111111111111")
+    identity=("test-authority",model_id,"architecture","wall-1")
+    assert global_id(*identity,"wall")=="1uhxD$Bq5TcvZak8k2Qda4"
+    assert global_id(*identity,"wall")==global_id(*identity,"wall")
+    assert global_id(*identity,"opening")!=global_id(*identity,"wall")
+
+
+def test_global_id_is_namespaced_by_model_and_authority():
+    first_model=UUID("11111111-1111-1111-1111-111111111111")
+    second_model=UUID("33333333-3333-3333-3333-333333333333")
+    first=global_id("authority-a",first_model,"architecture","wall-1","wall")
+    assert first!=global_id("authority-a",second_model,"architecture","wall-1","wall")
+    assert first!=global_id("authority-b",first_model,"architecture","wall-1","wall")
 
 def test_semantic_fingerprint_normalizes_mapping_order(architecture_snapshot):
     reordered=dict(reversed(list(architecture_snapshot.items())))

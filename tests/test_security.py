@@ -40,3 +40,18 @@ def test_rpc_input_rejects_symlink_when_supported(tmp_path):
     try: link.symlink_to(target)
     except OSError: pytest.skip("symlink creation unavailable on this platform")
     with pytest.raises(UnsafePathError): rpc_input(tmp_path,"link.ifc",10)
+
+def test_temp_root_follows_job_root_configuration(tmp_path,monkeypatch):
+    from motor_ifc.security import temp_root
+    monkeypatch.delenv("MOTOR_IFC_JOB_ROOT",raising=False)
+    assert temp_root() is None
+    monkeypatch.setenv("MOTOR_IFC_JOB_ROOT",str(tmp_path))
+    root=temp_root()
+    assert root==tmp_path/".tmp.motor-ifc" and root.is_dir()
+    assert temp_root()==root
+    # A job root that was configured and cannot be used is an explicit error.
+    # Returning None here meant tempfile fell back to the system %TEMP% and
+    # the private snapshot left the sandbox the caller had asked for.
+    from motor_ifc.security import JobRootUnavailable
+    monkeypatch.setenv("MOTOR_IFC_JOB_ROOT",str(tmp_path/"missing"))
+    with pytest.raises(JobRootUnavailable): temp_root()

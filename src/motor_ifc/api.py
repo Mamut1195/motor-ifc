@@ -2,7 +2,7 @@
 from __future__ import annotations
 import hashlib, importlib.util, json, os, shutil, tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from pydantic import TypeAdapter, ValidationError
 from . import compiler
 from ._version import VERSION
@@ -11,8 +11,11 @@ from .diagnostics import DiagnosticCode, error
 from .federation import build as _build_federation
 from .identity import semantic_fingerprint
 from .ids_validation import validate as _validate_ids
-from .models import Capabilities, CompileContext, CompileResult, FederationResult, IdsValidationResult, InspectionResult, ReaderExtractionResult, ValidationPolicy, ValidationResult, ViewerConversionResult
+from .models import Capabilities, CompileContext, CompileResult, FederationResult, IdsValidationResult, InspectionResult, ModelAuditResult, ModelRepairResult, ReaderExtractionResult, ReaderExtractionResultV2, ValidationPolicy, ValidationResult, ViewerConversionResult
+from .model_repair import audit as _audit_ifc
+from .model_repair import repair as _repair_ifc
 from .reader_extraction import extract as _extract_ifc
+from .reader_extraction import extract_semantic as _extract_ifc_semantic
 from .security import UnsafePathError, secure_new_output
 from .viewer_conversion import convert as _convert_ifc_to_glb
 
@@ -20,7 +23,7 @@ _ADAPTER = TypeAdapter(AuthoringEnvelope)
 _ENGINE_VERSION = VERSION
 
 def capabilities() -> Capabilities:
-    return Capabilities(engine_version=_ENGINE_VERSION, contract_versions=("authoring.v1","ids-validation.v1","viewer-conversion.v1","process-supervision.v1","reader-extraction.v1"), validation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), compilation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), ifc_schemas=("IFC4",), ifcopenshell_available=importlib.util.find_spec("ifcopenshell") is not None,ids_validation_contract_versions=("ids-validation.v1",),ids_versions=("1.0",),ifctester_available=importlib.util.find_spec("ifctester") is not None,viewer_conversion_contract_versions=("viewer-conversion.v1",),viewer_formats=("glb-2.0",),supervision_contract_versions=("process-supervision.v1",),supervisor_default_workers=1,supervisor_max_workers=4,request_cancellation=True,reader_extraction_contract_versions=("reader-extraction.v1",))
+    return Capabilities(engine_version=_ENGINE_VERSION, contract_versions=("authoring.v1","ids-validation.v1","viewer-conversion.v1","process-supervision.v1","reader-extraction.v1","reader-extraction.v2","model-audit.v1","model-repair.v1"), validation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), compilation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), ifc_schemas=("IFC4",), ifcopenshell_available=importlib.util.find_spec("ifcopenshell") is not None,ids_validation_contract_versions=("ids-validation.v1",),ids_versions=("1.0",),ifctester_available=importlib.util.find_spec("ifctester") is not None,viewer_conversion_contract_versions=("viewer-conversion.v1",),viewer_formats=("glb-2.0",),supervision_contract_versions=("process-supervision.v1",),supervisor_default_workers=1,supervisor_max_workers=4,request_cancellation=True,reader_extraction_contract_versions=("reader-extraction.v1","reader-extraction.v2"),model_audit_contract_versions=("model-audit.v1",),model_repair_contract_versions=("model-repair.v1",))
 
 def _parse(snapshot: Any, policy: ValidationPolicy):
     if policy.warnings_as_errors:
@@ -90,6 +93,15 @@ def inspect_ifc(path: str|Path) -> InspectionResult:
 
 def extract_ifc(path: str|Path) -> ReaderExtractionResult:
     return _extract_ifc(path)
+
+def extract_ifc_semantic(path: str|Path, projection: Literal["rich","metadata","properties","quantities","materials"]="rich", output_dir: str|Path|None=None) -> ReaderExtractionResultV2:
+    return _extract_ifc_semantic(path, projection, output_dir)
+
+def audit_ifc(path: str|Path) -> ModelAuditResult:
+    return _audit_ifc(path)
+
+def repair_ifc(path: str|Path, output_dir: str|Path) -> ModelRepairResult:
+    return _repair_ifc(path, output_dir)
 
 def validate_ifc(path: str|Path, policy: ValidationPolicy|None=None) -> ValidationResult:
     if policy is not None and policy != ValidationPolicy():

@@ -1,0 +1,99 @@
+{
+  "artifact_filenames": [],
+  "contract_version": "reader-extraction.v2",
+  "diagnostics": [],
+  "entities": [
+    {
+      "description": null,
+      "global_id": "00000000000000000000E4",
+      "ifc_class": "IfcWall",
+      "material_associations": [
+        {
+          "category": "structural",
+          "constituents": [],
+          "description": null,
+          "kind": "material",
+          "layers": [],
+          "materials": [],
+          "name": "Concrete",
+          "profiles": [],
+          "relation_global_id": "0000000000000000000005",
+          "source": "occurrence",
+          "usage_direction": null,
+          "usage_offset": null
+        },
+        {
+          "category": null,
+          "constituents": [],
+          "description": null,
+          "kind": "layer_set_usage",
+          "layers": [
+            {
+              "category": "finish",
+              "is_ventilated": false,
+              "material_name": "Steel",
+              "priority": 1,
+              "thickness": 0.2
+            },
+            {
+              "category": null,
+              "is_ventilated": "UNKNOWN",
+              "material_name": "Concrete",
+              "priority": null,
+              "thickness": 0.1
+            }
+          ],
+          "materials": [],
+          "name": "OracleLayers",
+          "profiles": [],
+          "relation_global_id": "0000000000000000000006",
+          "source": "type",
+          "usage_direction": "AXIS3",
+          "usage_offset": 0.1
+        }
+      ],
+      "name": "Oracle wall",
+      "object_type": null,
+      "tag": null
+    },
+    {
+      "description": null,
+      "global_id": "00000000000000000000E5",
+      "ifc_class": "IfcBuildingElementProxy",
+      "material_associations": [
+        {
+          "category": null,
+          "constituents": [
+            {
+              "category": "binder",
+              "description": null,
+              "fraction": 0.8,
+              "material_name": "Concrete",
+              "name": "Cement"
+            }
+          ],
+          "description": null,
+          "kind": "constituent_set",
+          "layers": [],
+          "materials": [],
+          "name": "Mix",
+          "profiles": [],
+          "relation_global_id": "0000000000000000000007",
+          "source": "occurrence",
+          "usage_direction": null,
+          "usage_offset": null
+        }
+      ],
+      "name": "Bare object",
+      "object_type": null,
+      "tag": null
+    }
+  ],
+  "entity_count": 2,
+  "extraction_sha256": null,
+  "publication": "none",
+  "source_schema": "IFC4X3",
+  "source_sha256": "0076d8fc31744f4ce03bff2a14e66b04d03fd6b1b918d5a8e27e20249a5be614",
+  "success": true,
+  "truncated": false
+}

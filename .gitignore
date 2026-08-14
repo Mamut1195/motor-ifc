@@ -9,3 +9,10 @@ build/
 .venv/
 .tmp_pytest_*/
 .atl/
+
+# Measurement output and audit reports: regenerable, and the 2026-08-11
+# report alone is 15.8 MB. Keep the harness, not its output.
+.ruff_cache/
+benchmarks/results/
+reporte-motor-ifc-*.html
+auditoria-*.html

@@ -38,8 +38,9 @@ def _units(file):
     volume = file.create_entity("IfcSIUnit", UnitType="VOLUMEUNIT", Name="CUBIC_METRE")
     return file.create_entity("IfcUnitAssignment", Units=(length, area, volume))
 
-def _rel_aggregate(file, owner, parent, child, suffix):
-    file.create_entity("IfcRelAggregates", GlobalId=global_id("architecture", suffix, "aggregate"), OwnerHistory=owner, RelatingObject=parent, RelatedObjects=(child,))
+def _rel_aggregate(file, owner, parent, child, snapshot, suffix):
+    gid=global_id(snapshot.authority.producer,snapshot.model_id,"architecture",suffix,"aggregate")
+    file.create_entity("IfcRelAggregates", GlobalId=gid, OwnerHistory=owner, RelatingObject=parent, RelatedObjects=(child,))
 
 def _wall_shape(file, context, wall):
     points = tuple(file.create_entity("IfcCartesianPoint", Coordinates=p) for p in ((0.0,0.0),(wall.length,0.0),(wall.length,wall.thickness),(0.0,wall.thickness)))
@@ -53,21 +54,22 @@ def compile_architecture(snapshot: ArchitectureEnvelope, target: Path) -> dict[s
     ifc = runtime(); file = ifc.file(schema="IFC4")
     owner = _owner(file); context = _context(file); units = _units(file)
     source_map: dict[str, str] = {}
-    project_gid = global_id("architecture", str(snapshot.model_id), "project")
+    identity=(snapshot.authority.producer,snapshot.model_id,"architecture")
+    project_gid = global_id(*identity, str(snapshot.model_id), "project")
     project = file.create_entity("IfcProject", GlobalId=project_gid, OwnerHistory=owner, Name=f"Model {snapshot.model_id}", RepresentationContexts=(context,), UnitsInContext=units)
-    site = file.create_entity("IfcSite", GlobalId=global_id("architecture", str(snapshot.model_id), "site"), OwnerHistory=owner, Name="Site", CompositionType="ELEMENT", ObjectPlacement=_placement(file))
-    building = file.create_entity("IfcBuilding", GlobalId=global_id("architecture", str(snapshot.model_id), "building"), OwnerHistory=owner, Name="Building", CompositionType="ELEMENT", ObjectPlacement=_placement(file, site.ObjectPlacement))
-    storey_gid = global_id("architecture", snapshot.payload.storey_source_id, "storey")
+    site = file.create_entity("IfcSite", GlobalId=global_id(*identity, str(snapshot.model_id), "site"), OwnerHistory=owner, Name="Site", CompositionType="ELEMENT", ObjectPlacement=_placement(file))
+    building = file.create_entity("IfcBuilding", GlobalId=global_id(*identity, str(snapshot.model_id), "building"), OwnerHistory=owner, Name="Building", CompositionType="ELEMENT", ObjectPlacement=_placement(file, site.ObjectPlacement))
+    storey_gid = global_id(*identity, snapshot.payload.storey_source_id, "storey")
     storey = file.create_entity("IfcBuildingStorey", GlobalId=storey_gid, OwnerHistory=owner, Name=snapshot.payload.storey_name, CompositionType="ELEMENT", Elevation=snapshot.payload.elevation, ObjectPlacement=_placement(file, building.ObjectPlacement, (0.0,0.0,snapshot.payload.elevation)))
     source_map[snapshot.payload.storey_source_id] = storey_gid
-    _rel_aggregate(file, owner, project, site, "project-site"); _rel_aggregate(file, owner, site, building, "site-building"); _rel_aggregate(file, owner, building, storey, "building-storey")
+    _rel_aggregate(file, owner, project, site, snapshot, "project-site"); _rel_aggregate(file, owner, site, building, snapshot, "site-building"); _rel_aggregate(file, owner, building, storey, snapshot, "building-storey")
     walls=[]
     for wall in snapshot.payload.elements:
-        gid=global_id("architecture", wall.source_id, "wall")
+        gid=global_id(*identity, wall.source_id, "wall")
         product=file.create_entity("IfcWall", GlobalId=gid, OwnerHistory=owner, Name=wall.name, ObjectPlacement=_placement(file, storey.ObjectPlacement, (wall.x,wall.y,wall.z)), Representation=_wall_shape(file, context, wall))
         walls.append(product); source_map[wall.source_id]=gid
     if walls:
-        file.create_entity("IfcRelContainedInSpatialStructure", GlobalId=global_id("architecture", snapshot.payload.storey_source_id, "containment"), OwnerHistory=owner, RelatedElements=tuple(walls), RelatingStructure=storey)
+        file.create_entity("IfcRelContainedInSpatialStructure", GlobalId=global_id(*identity, snapshot.payload.storey_source_id, "containment"), OwnerHistory=owner, RelatedElements=tuple(walls), RelatingStructure=storey)
     file.write(str(target))
     reopened=ifc.open(str(target))
     if len(reopened.by_type("IfcProject")) != 1 or len(reopened.by_type("IfcBuildingStorey")) != 1:
@@ -82,11 +84,12 @@ def compile_architecture(snapshot: ArchitectureEnvelope, target: Path) -> dict[s
 def compile_structure(snapshot: StructureEnvelope, target: Path) -> dict[str, str]:
     ifc = runtime(); file = ifc.file(schema="IFC4")
     owner = _owner(file); context = _context(file); units = _units(file)
-    file.create_entity("IfcProject", GlobalId=global_id("structure", str(snapshot.model_id), "project"), OwnerHistory=owner, Name=f"Model {snapshot.model_id}", RepresentationContexts=(context,), UnitsInContext=units)
+    identity=(snapshot.authority.producer,snapshot.model_id,"structure")
+    file.create_entity("IfcProject", GlobalId=global_id(*identity, str(snapshot.model_id), "project"), OwnerHistory=owner, Name=f"Model {snapshot.model_id}", RepresentationContexts=(context,), UnitsInContext=units)
     classes = {"beam":"IfcBeam", "column":"IfcColumn", "plate":"IfcPlate", "foundation":"IfcFooting"}
     source_map: dict[str, str] = {}
     for member in snapshot.payload.members:
-        gid = global_id("structure", member.source_id, member.member_type)
+        gid = global_id(*identity, member.source_id, member.member_type)
         file.create_entity(classes[member.member_type], GlobalId=gid, OwnerHistory=owner, Name=member.name)
         source_map[member.source_id] = gid
     file.write(str(target))
@@ -103,10 +106,11 @@ def compile_structure(snapshot: StructureEnvelope, target: Path) -> dict[str, st
 def compile_mep(snapshot: MepEnvelope, target: Path) -> dict[str, str]:
     ifc = runtime(); file = ifc.file(schema="IFC4")
     owner = _owner(file); context = _context(file); units = _units(file)
-    file.create_entity("IfcProject", GlobalId=global_id("mep", str(snapshot.model_id), "project"), OwnerHistory=owner, Name=f"Model {snapshot.model_id}", RepresentationContexts=(context,), UnitsInContext=units)
+    identity=(snapshot.authority.producer,snapshot.model_id,"mep")
+    file.create_entity("IfcProject", GlobalId=global_id(*identity, str(snapshot.model_id), "project"), OwnerHistory=owner, Name=f"Model {snapshot.model_id}", RepresentationContexts=(context,), UnitsInContext=units)
     source_map: dict[str, str] = {}
     for component in snapshot.payload.components:
-        gid = global_id("mep", component.source_id, f"component-{component.system}")
+        gid = global_id(*identity, component.source_id, f"component-{component.system}")
         file.create_entity("IfcDistributionElement", GlobalId=gid, OwnerHistory=owner, Name=component.name)
         source_map[component.source_id] = gid
     file.write(str(target))

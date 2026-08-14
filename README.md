@@ -2,6 +2,22 @@
 
 `motor-ifc` is a private, deterministic compiler from approved MAMUT authority snapshots to IFC. It does **not** design buildings, size systems, infer missing engineering decisions, or execute arbitrary model code.
 
+## Scope — read this before adopting
+
+Claims here are graduated by tier against measured evidence, never by aspiration. The full verdict lives in `docs_dev/STATUS.md`; the short version:
+
+| Capability | Tier | State |
+|---|---|---|
+| Audit-grade quantity and material extraction (`reader.extract.v2`) | S/M | **Ready.** This is what the engine is for. |
+| The same, on large models | L/XL | **Unevidenced.** Largest measured: 49 MB, 3,823 objects, ~1M nodes. |
+| IFC authoring (`authoring.compile.v1`) | — | **Narrow verticals only**, see the paragraph below. Not a general authoring engine. |
+| IDS validation (`ids.validate.v1`) | — | Real `ifctester` integration, exercised end to end by `tests/test_ids_validation_live.py` (marker `ids`). |
+| Geometry / viewer conversion | — | Caveated; see STATUS. |
+
+This is **not** a universal BIM engine. What it would take to become a general IFC engine — geometric and spatial structure compilation, connected and typed MEP with materials and flow, and L/XL benchmarks without timeouts — is planned by waves in `docs_dev/ROADMAP.md` and is not done.
+
+Every path that stages a private snapshot needs `MOTOR_IFC_JOB_ROOT`. Leaving it unset means the system temp directory, which is a deliberate default for standalone library use; setting it to something unusable is an explicit `JOB_ROOT_UNAVAILABLE` error, never a silent fallback that puts the snapshot outside the sandbox you asked for.
+
 ## Quick path
 
 ```powershell
@@ -19,7 +35,7 @@ The current vertical slices accept `authoring.v1` with `building.architecture@1`
 from motor_ifc import capabilities, validate_snapshot, compile_snapshot
 ```
 
-The package also exposes `validate_ifc`, `validate_ids`, `convert_ifc_to_glb`, `extract_ifc`, `inspect_ifc`, and `build_federation`. All operations return typed results with stable diagnostics. An unavailable or unsupported optional runtime is an explicit error, never a fake success.
+The package also exposes `validate_ifc`, `validate_ids`, `convert_ifc_to_glb`, `extract_ifc`, `extract_ifc_semantic`, `audit_ifc`, `repair_ifc`, `inspect_ifc`, and `build_federation`. All operations return typed results with stable diagnostics. An unavailable or unsupported optional runtime is an explicit error, never a fake success.
 
 ## Rich reader extraction
 
@@ -36,6 +52,27 @@ Values are recursively normalized to JSON null, boolean, string, integer, finite
 The fixed limits are 100 MB input, 10,000 entities, 1,000 combined property/quantity sets per entity, 10,000 normalized nodes per entity, 100,000 total normalized nodes, depth 16, strings and dictionary keys 1,000 characters, and arrays 1,000 items. Each scalar and each dict/list container is one node, including empty containers; the six metadata fields and all requested rich-section roots and descendants consume the same budgets. Extraction opens only a private read-only snapshot of the bounded source bytes, runs IfcOpenShell schema validation before filtering entities, and verifies the held original source identity, size, mtime, and SHA-256 before success. Every result contains `contract_version`, `success`, `source_schema`, `entity_count`, `entities`, `diagnostics`, `truncated`, `publication: "none"`, and empty `artifact_filenames`; it exposes no paths, timestamps, raw exceptions, STEP IDs, or IfcOpenShell objects.
 
 The sidecar method is `reader.extract.v1` with exactly `{"ifc_path":"relative/model.ifc"}` beneath `MOTOR_IFC_JOB_ROOT`. Existing legacy method names `extract_metadata`, `extract_properties`, and `extract_quantities` accept those same exact params and are compatibility projections over the same engine. They return the same versioned envelope and metadata on every entity, adding only the requested rich section. No older response shape was documented or implemented, so this mapping introduces no conflicting compatibility claim. `inspect_ifc` remains unchanged.
+
+## Semantic reader extraction
+
+```python
+from motor_ifc import extract_ifc_semantic
+
+result = extract_ifc_semantic("model.ifc", "quantities")
+```
+
+`reader-extraction.v2` adds lossless semantic quantities and material associations while `reader-extraction.v1` stays byte-stable. Quantity sets are traversed from occurrence `IfcRelDefinesByProperties` and relating-type `HasPropertySets` rather than the flattened helper: each set keeps its identity, `method_of_measurement`, occurrence/type `source`, and `relation_global_id`, and each quantity keeps its IFC class, declared value with measure type, `formula` when the schema exposes it, and recursive components for complex quantities. Units resolve in three explicit levels — the quantity `Unit` attribute, else the project unit, else `source: "unknown"` — recording name, symbol, SI prefix, and unit type, with `normalized_value` set to the SI value only when derivable. Sets and quantities are ordered lists, never name-keyed dictionaries: duplicates are preserved, and a type set shadowed by a same-named occurrence set carries `shadowed_by_occurrence: true`. Materials cover `IfcMaterial`, material lists, layer sets and usages, profile sets and usages, and constituent sets on both occurrence and type. Projections are `rich`, `metadata`, `properties`, `quantities`, and `materials`; the same snapshot, validation, node budgets, determinism, and atomic-failure rules as v1 apply. The sidecar method is `reader.extract.v2` with `{"ifc_path":"relative/model.ifc","projection":"rich"}`; `projection` is optional. Geometry-derived quantities, material property sets, and unit algebra beyond declared/project plus SI normalization are explicit non-goals (ADR 0006).
+
+## Model audit and repair
+
+```python
+from motor_ifc import audit_ifc, repair_ifc
+
+report = audit_ifc("model.ifc")
+result = repair_ifc("model.ifc", "repair-result")
+```
+
+Real IFC files often fail the reader's strict schema gate. `model-audit.v1` reports every EXPRESS validation defect with `step_id`, `ifc_class`, `global_id` when rooted, failing `attribute`, coarse `rule`, and a typed `repair_strategy`, plus structural counts and the source SHA-256. It is read-only and publishes nothing. `model-repair.v1` applies the whitelisted `drop-instance` strategy only — defective `IfcRelationship` instances, which are referenced solely through inverse attributes — then revalidates and publishes one new immutable directory containing `repaired.ifc` and `repair-manifest.json` (`motor-ifc.repair-manifest.v1`: source/repaired SHA-256, applied fixes, versions). The source is never modified, values or references are never invented, non-relationship defects are reported as `manual` and fail the repair without publication, and a defect-free model returns `repaired: false` with no artifacts (ADR 0007). The sidecar methods are `model.audit.v1` with exactly `{"ifc_path":"relative/model.ifc"}` and `model.repair.v1` with exactly `{"ifc_path":"relative/model.ifc","output_dir":"relative/repair-result"}`, both contained beneath `MOTOR_IFC_JOB_ROOT`.
 
 ## IDS validation
 
