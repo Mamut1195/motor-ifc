@@ -10,6 +10,9 @@ Claims here are graduated by tier against measured evidence, never by aspiration
 |---|---|---|
 | Audit-grade quantity and material extraction (`reader.extract.v2`) | S/M | **Ready.** This is what the engine is for. |
 | The same, on large models | L/XL | **Unevidenced.** Largest measured: 49 MB, 3,823 objects, ~1M nodes. |
+| Element index with resolved quantities (`element.index.v1`) | S/M | **Ready.** Scope derived from buildingSMART's own `Qto_` templates and checked against them; known-answer cases on pinned corpus models; exercised end to end on a 49 MB model through publication. |
+| Quantity evidence for a caller's model (`quantity.evidence.v1`) | S/M | **Ready.** Deterministic, bounded, no model and no network inside the engine. One ruling recovers a dimension on 1,419 elements of a 49 MB model (ADR 0012). |
+| Model quality score (`quality.score.v1`) | — | **Ready, threshold partly inherited.** Three of its eight calibration files are reproducible here; five are not on disk, and the widened scope re-states two of the three. Every verdict is unchanged. See ADR 0011. |
 | IFC authoring (`authoring.compile.v1`) | — | **Narrow verticals only**, see the paragraph below. Not a general authoring engine. |
 | IDS validation (`ids.validate.v1`) | — | Real `ifctester` integration, exercised end to end by `tests/test_ids_validation_live.py` (marker `ids`). |
 | Geometry / viewer conversion | — | Caveated: it produces a GLB, and its fidelity is not claimed. |
@@ -37,7 +40,7 @@ The current vertical slices accept `authoring.v1` with `building.architecture@1`
 from motor_ifc import capabilities, validate_snapshot, compile_snapshot
 ```
 
-The package also exposes `validate_ifc`, `validate_ids`, `convert_ifc_to_glb`, `extract_ifc`, `extract_ifc_semantic`, `audit_ifc`, `repair_ifc`, `inspect_ifc`, and `build_federation`. All operations return typed results with stable diagnostics. An unavailable or unsupported optional runtime is an explicit error, never a fake success.
+The package also exposes `validate_ifc`, `validate_ids`, `convert_ifc_to_glb`, `extract_ifc`, `extract_ifc_semantic`, `index_ifc_elements`, `collect_quantity_evidence`, `score_ifc_quality`, `derive_quality_verdict`, `audit_ifc`, `repair_ifc`, `inspect_ifc`, and `build_federation`. All operations return typed results with stable diagnostics. An unavailable or unsupported optional runtime is an explicit error, never a fake success.
 
 ## Rich reader extraction
 
@@ -64,6 +67,184 @@ result = extract_ifc_semantic("model.ifc", "quantities")
 ```
 
 `reader-extraction.v2` adds lossless semantic quantities and material associations while `reader-extraction.v1` stays byte-stable. Quantity sets are traversed from occurrence `IfcRelDefinesByProperties` and relating-type `HasPropertySets` rather than the flattened helper: each set keeps its identity, `method_of_measurement`, occurrence/type `source`, and `relation_global_id`, and each quantity keeps its IFC class, declared value with measure type, `formula` when the schema exposes it, and recursive components for complex quantities. Units resolve in three explicit levels — the quantity `Unit` attribute, else the project unit, else `source: "unknown"` — recording name, symbol, SI prefix, and unit type, with `normalized_value` set to the SI value only when derivable. Sets and quantities are ordered lists, never name-keyed dictionaries: duplicates are preserved, and a type set shadowed by a same-named occurrence set carries `shadowed_by_occurrence: true`. Materials cover `IfcMaterial`, material lists, layer sets and usages, profile sets and usages, and constituent sets on both occurrence and type. Projections are `rich`, `metadata`, `properties`, `quantities`, and `materials`; the same snapshot, validation, node budgets, determinism, and atomic-failure rules as v1 apply. The sidecar method is `reader.extract.v2` with `{"ifc_path":"relative/model.ifc","projection":"rich"}`; `projection` is optional. Geometry-derived quantities, material property sets, and unit algebra beyond declared/project plus SI normalization are explicit non-goals (ADR 0006).
+
+## Element index
+
+```python
+from motor_ifc import index_ifc_elements
+
+result = index_ifc_elements("model.ifc")
+```
+
+`element-index.v1` reduces a model to one measured number per dimension per element. What it
+indexes is derived from buildingSMART rather than chosen: the entities for which IFC4 ADD2
+defines a `Qto_*BaseQuantities` template, reached through three branch supertypes. Openings
+and projections are excluded because their quantity deducts from a host and buildingSMART
+requires their `ContainedInStructure` to be NIL; sites, buildings and storeys because they
+already contain everything inside them; construction resources because they are cost, not
+geometry. A test reads those official templates and fails if the scope drifts from them.
+`reader-extraction.v2` reports every quantity set losslessly and leaves collision
+detection to its consumer (ADR 0006); this contract is that consumer, and it is a
+projection over the same reader pipeline rather than a second reader. `by_type` already returns every subtype, so `*StandardCase` entities arrive through their
+parent, and a class group whose every schema alias is missing is recorded in `skipped_types`
+instead of aborting the read. Each
+record carries `global_id`, `ifc_class`, name, storey, a bounded material summary,
+classification, the winning quantity set, and the selected quantities. The result adds
+`source_schema`, `project_name`, `storeys`, `element_types`, `skipped_types` and
+`duplicate_global_id_count`.
+
+Each record also carries a `measurability` — `structural`, `countable`, `container`,
+`ambiguous` or `non_geometric` — decided from decomposition and geometry before class, and
+never from the element's name. A `countable` element with no quantity set reports
+`count = 1` under `quantity_source: "existence"`, marked distinctly because that number was
+counted rather than measured. `part_of_global_id` and `decomposes_into` expose the
+decomposition both ways, so a caller summing a curtain wall and its members can see the
+double count.
+
+Rooms are indexed as their own family. `Qto_SpaceBaseQuantities` defines six areas rather
+than one, so a space reports `floor_area`, `wall_area`, `ceiling_area`, `perimeter`, `height`
+and `volume` — flooring, paint, ceilings and the perimeter the specification names for
+skirting boards. Room dimensions and element dimensions are disjoint: a room never reports
+the bare `area` a wall reports. `GSA BIM Area` is accepted as a vendor floor area because
+IFC2X3 defines no quantity template at all, while `SpaceNetFloorAreaBOMA` and
+`SpaceUsableFloorAreaBOMA` are named and refused — BOMA measures rentable area under leasing
+rules, not work anyone executes.
+
+Quantities are selected by name in a declared order of preference, never by whichever
+one came last: net before gross, because net is deducted for openings and is the
+conservative basis for costing. A canonical `BaseQuantities` or `Qto_*BaseQuantities`
+set wins over a vendor set entirely, so one exporter's net area is never paired with
+another's gross volume, and sets nested under `IfcPhysicalComplexQuantity` are
+descended into. An element with nothing readable is `quantity_source: "fallback"` with
+no quantities at all — never a measured zero, since several vendor quantities are
+legitimately 0.0 because they measure something else. Units resolve through
+`ifcopenshell.util.unit`: `value` is the declared number, `unit` says what it is in,
+and `normalized_value` is the SI value only when derivable. `count` is dimensionless
+and reported as already normalized. A selected quantity whose unit will not resolve
+produces a `warning`-severity `UNRESOLVED_UNIT_SCALE` diagnostic carrying its
+`global_id` and increments `unresolved_unit_scale_count`; a dropped SI value that says
+nothing is the defect that produces order-of-magnitude errors no later check finds.
+
+The fixed limits are 300 characters for material and classification summaries, 1,000
+storeys, 1,000 distinct element classes, and 100 inline unit-scale warnings — the
+warning count itself is never truncated. Input bytes, entity count, per-entity and
+total nodes, depth, string length and array length are the reader's, unchanged.
+Entities sort by `(global_id, ifc_class)`, storeys by `global_id`, and dimensions in a
+fixed order, so two runs of the same file produce the same document. Any limit breach
+fails the whole index with no entities and `truncated: false`.
+
+Projections are `index` (default) and `rich`, which adds single-value property sets.
+Results travel inline under the reader's byte cap; anything larger fails with a typed
+diagnostic pointing at publication, and an `output_dir` publishes one immutable
+directory containing `extraction.json` and `extraction-manifest.json`. That artifact is
+byte-identical to the canonical inline document, so it validates straight back into
+`ElementIndexResult` and can be scored without re-reading the model. The sidecar method
+is `element.index.v1` with `{"ifc_path":"relative/model.ifc","projection":"index","output_dir":null}`;
+`projection` and `output_dir` are optional and both paths stay contained beneath
+`MOTOR_IFC_JOB_ROOT` (ADR 0011).
+
+## Quantity evidence, and caller-decided quantities
+
+```python
+from motor_ifc import collect_quantity_evidence, index_ifc_elements
+
+question = collect_quantity_evidence("model.ifc")
+result = index_ifc_elements("model.ifc", decisions=confirmed_rulings)
+```
+
+The selection tables are conservative, so most of a real file's numbers are dropped:
+Schependomlaan declares 153,815 quantities and 128,310 of them sit under 536 names no table
+claims. Most of that is correctly discarded — `Home Offset`, `Elevation to Project Zero` —
+but the same list holds `Net Surface Area on the Outside Face` 1,419 times, which is the
+paint area of a wall's outer face. Separating the two cannot be tabulated in advance: they
+are exporter dialects, in several languages, different per project.
+
+`quantity-evidence.v1` states that question instead of answering it. It reports a
+**vocabulary** of dropped names — with occurrences, the classes carrying them, a sample
+value with its resolved unit, how many distinct elements the name would reach, and
+`competes_with`, the quantity already selected for that measure or null when nothing
+measures that dimension at all — and **element groups** a ruling could change, with their
+object types, type name and property sets. Only what a ruling could move is listed: a
+container is measured through its parts and a countable element through its existence, so
+neither is undecided. Groups sort by whether they are worth deciding and carry a cumulative
+percentage as a stop signal. Bounded at 200 names and 200 groups ordered by reach, with the
+tail declared as a count.
+
+`quantity-decisions.v1` is the answer, supplied by the caller exactly as IDS requirements
+are: the engine validates and applies it and never generates one. A ruling maps a declared
+name to a dimension or marks it not a measurement, and may rule an element class billable.
+It adds dimensions the tables never claimed and overrides none they did. **Not one field of
+the contract is numeric** — a test walks the generated JSON Schema to prove it — so a model
+filling it in has nowhere to put an invented quantity; the value always comes from the file.
+Everything a ruling selects carries `decided_by`, and a ruling matching nothing in the model
+raises a warning rather than passing silently. Without a document the behaviour is
+byte-identical to the frozen one.
+
+**No language model runs inside this engine, and it gains no network dependency.** The
+sidecar methods are `quantity.evidence.v1` with exactly `{"ifc_path":"relative/model.ifc"}`
+and `element.index.v1` with an optional `decisions_path` bounded at 5 MB beneath
+`MOTOR_IFC_JOB_ROOT`. Which model answers, at what cost, under what prompt, is the caller's
+business entirely (ADR 0012).
+
+## Model quality score
+
+```python
+from motor_ifc import index_ifc_elements, score_ifc_quality, derive_quality_verdict
+
+report = score_ifc_quality(index_ifc_elements("model.ifc"))
+```
+
+`quality-score.v1` answers a different question from `model-audit.v1`. That contract
+reports EXPRESS schema conformance — whether the file is a legal IFC. This one reports
+measurability and completeness: whether the model carries the facts a quantity takeoff
+needs. A model can be schema-perfect and score zero here, and a schema-defective model
+can be fully measurable. It reads no IFC and needs no optional runtime.
+
+`score_ifc_quality` takes an index result and returns issues, a score and a verdict in
+one pass. `derive_quality_verdict` takes the materialized scalars instead — element
+totals, distinct error and warning codes, model-level error messages, issue count — so
+a caller that persisted its issues can re-derive the same verdict without re-auditing.
+Both paths compute the same numbers, so they cannot disagree about the same model. The
+five verdicts are `ok`, `degraded`, `blocked`, `not_audited`, and `not_applicable` for
+a synthetic model that never had an audit step to skip.
+
+**The score never refuses anything.** `refuses_generation` derives from `verdict`
+alone, and only `blocked` — which requires an error-severity code — or `not_audited`
+refuse. The threshold of 70.0 is read in exactly one place, the branch separating `ok`
+from `degraded`, and `degraded` still generates. A model with 100% base quantities and
+missing materials loses real points and still passes; a model that cannot be measured
+is refused by `MODEL_NOT_MEASURABLE` even with a high score. Three of the eight
+calibration files behind that threshold are reproduced here to the decimal (83.4, 38.5,
+0.0); the other five are not on disk, so their rows travel as inherited, dated,
+un-remeasured evidence rather than as a claim. See ADR 0011 for the table, the warning
+it carries, and why a score floor would refuse a perfectly measurable model.
+
+**Coverage is the number to act on.** `score` mixes every element-level defect together
+and stays as calibrated; `coverage` reports measurability alone, over a denominator that
+holds only what could have been measured. A count of elements without quantities is not a
+count of unmeasured work: a *container* like a roof or a curtain wall keeps its quantities
+in the parts it decomposes into, a *non-geometric* grouping node has nothing to measure,
+and a *countable* door or fitting is billed per unit whether or not the exporter wrote a
+number. Decomposition counts both ways: a whole is covered by its parts, and a part by any
+whole that measures, so the 257 layers inside a measured covering are one covering rather
+than 257 gaps. Rooms report in a `spatial` bucket of their own, beside the element headline
+and never inside it. Each element is classified from structure — decomposition and geometry — before
+class, and never from its name; `IfcBuildingElementProxy` stays explicitly *ambiguous* and
+is reported beside the headline rather than inside it. The result gives per-bucket totals,
+`coverage_percent`, and `uncovered_by_class`: the grouped, ordered list of what is actually
+missing. Measured on the pinned corpus: Schependomlaan and CAND 100%, gymzaal 99.8%, PCERT 88.9%,
+Duplex 24.2%, where the raw element share read 100/100/87/54/0.
+
+`MODEL_NOT_MEASURABLE` fires on billable coverage rather than the raw share, with the same
+calibrated 0.5 majority — the constant did not move, the denominator got sharper, and the
+verdicts are identical on every model available.
+
+The fixed bounds are 100,000 issues per model, 100 reported uncovered groups, and a
+container chain resolved 8 deep; exceeding the issue bound fails the scoring. The
+contract is read-only: `publication` is `"none"` and `artifact_filenames` is empty. The
+sidecar method is `quality.score.v1` with exactly `{"facts":{...}}` and needs no job
+root, because it touches no files — that path returns a verdict without coverage, which
+needs the elements themselves.
 
 ## Model audit and repair
 

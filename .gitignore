@@ -19,3 +19,7 @@ auditoria-*.html
 
 # Internal working docs: status, roadmap, handoff, findings, task plan.
 docs_dev/
+
+# Internal briefs. They carry absolute paths into private MAMUT applications, which is
+# exactly what the clean-room boundary in docs/PROVENANCE.md keeps out of this repository.
+motor-ifc-ampliacion.md

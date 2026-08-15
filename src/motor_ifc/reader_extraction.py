@@ -265,6 +265,32 @@ def _entity_metadata(item: Any, counter: _Counter) -> dict[str, Any]:
     }
 
 
+def _jsonable(value: Any) -> Any:
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    return value
+
+
+def _json_fields(fields: dict[str, Any]) -> str:
+    """Serialize extra result fields in caller-declared order.
+
+    Insertion order, never sorted: the streamed artifact must come out byte-identical
+    to the inline document, and that document's key order is the DTO's field order.
+    """
+    if not fields:
+        return ""
+    return "," + ",".join(
+        json.dumps(key) + ":" + json.dumps(_jsonable(value), separators=(",", ":"))
+        for key, value in fields.items()
+    )
+
+
+def _default_scope(model: Any) -> tuple[list[Any], dict[str, Any]]:
+    return [item for item in model.by_type("IfcObject") if isinstance(getattr(item, "GlobalId", None), str) and item.GlobalId], {}
+
+
 def _extract_pipeline(
     path: str | Path,
     builder: Any,
@@ -274,8 +300,15 @@ def _extract_pipeline(
     projection: str | None = None,
     output_dir: str | Path | None = None,
     inline_byte_cap: int | None = None,
+    prepare: Any = None,
+    finalize: Any = None,
 ) -> Any:
-    """Shared bounded pipeline: secure open, snapshot, validation, ordered entities, atomic errors."""
+    """Shared bounded pipeline: secure open, snapshot, validation, ordered entities, atomic errors.
+
+    ``prepare`` selects the entity scope and returns result fields knowable before the
+    entity loop; ``finalize`` returns the fields only knowable after it. Both default to
+    the frozen reader behaviour, so v1 and v2 are unaffected.
+    """
     source_stream: BinaryIO | None = None
     try:
         safe_path = secure_existing_input(path, MAX_IFC_BYTES)
@@ -302,7 +335,7 @@ def _extract_pipeline(
             source_hash = _snapshot_source(source_stream, source_before, snapshot)
             model = ifc.open(str(snapshot))
             _validate_schema(model)
-            scoped = [item for item in model.by_type("IfcObject") if isinstance(getattr(item, "GlobalId", None), str) and item.GlobalId]
+            scoped, pre_fields = (prepare or _default_scope)(model)
             if len(scoped) > MAX_ENTITIES:
                 raise _BoundExceeded
             scoped.sort(key=lambda item: (item.GlobalId, item.is_a()))
@@ -313,6 +346,10 @@ def _extract_pipeline(
                 for item in scoped:
                     counter.entity = 0
                     entity = builder(model, element_util, item, counter)
+                    if entity is None:
+                        # An aggregate contract streams every entity to accumulate and emits
+                        # none of them. Nothing else returns None.
+                        continue
                     if inline_byte_cap is not None:
                         inline_size += len(json.dumps(entity.model_dump(mode="json"), separators=(",", ":")).encode("utf-8")) + 1
                         if inline_size > inline_byte_cap:
@@ -323,9 +360,11 @@ def _extract_pipeline(
                 return result_type(
                     success=True,
                     source_schema=str(model.schema),
-                    entity_count=len(result_entities),
-                    entities=tuple(result_entities),
-                    **({"source_sha256": source_hash} if result_type is ReaderExtractionResultV2 else {}),
+                    entity_count=len(scoped),
+                    **({"entities": tuple(result_entities)} if "entities" in result_type.model_fields else {}),
+                    **pre_fields,
+                    **(finalize() if finalize is not None else {}),
+                    **({"source_sha256": source_hash} if "source_sha256" in result_type.model_fields else {}),
                 )
             try:
                 target = secure_new_output(output_dir)
@@ -335,9 +374,10 @@ def _extract_pipeline(
             try:
                 with (stage / PUBLICATION_ARTIFACT).open("w", encoding="utf-8") as artifact_stream:
                     artifact_stream.write(
-                        '{"contract_version":' + json.dumps(CONTRACT_VERSION_V2)
+                        '{"contract_version":' + json.dumps(label)
                         + ',"success":true,"source_schema":' + json.dumps(str(model.schema))
                         + ',"entity_count":' + str(len(scoped))
+                        + _json_fields(pre_fields)
                         + ',"entities":['
                     )
                     separator = ""
@@ -346,21 +386,23 @@ def _extract_pipeline(
                         entity = builder(model, element_util, item, counter)
                         artifact_stream.write(separator + json.dumps(entity.model_dump(mode="json"), separators=(",", ":")))
                         separator = ","
+                    post_fields = finalize() if finalize is not None else {"diagnostics": []}
                     artifact_stream.write(
-                        '],"diagnostics":[],"truncated":false,"publication":"none","artifact_filenames":[]'
+                        ']' + _json_fields(post_fields)
+                        + ',"truncated":false,"publication":"none","artifact_filenames":[]'
                         ',"source_sha256":' + json.dumps(source_hash)
                         + ',"extraction_sha256":null}'
                     )
                 extraction_hash = hashlib.sha256((stage / PUBLICATION_ARTIFACT).read_bytes()).hexdigest()
                 manifest = {
                     "schema": PUBLICATION_MANIFEST_SCHEMA,
-                    "contract": CONTRACT_VERSION_V2,
+                    "contract": label,
                     "projection": projection,
                     "source_sha256": source_hash,
                     "extraction_sha256": extraction_hash,
                     "entity_count": len(scoped),
                     "artifacts": [PUBLICATION_ARTIFACT, PUBLICATION_MANIFEST],
-                    "versions": {"engine": VERSION, "contract": CONTRACT_VERSION_V2, "ifcopenshell": str(ifc.version)},
+                    "versions": {"engine": VERSION, "contract": label, "ifcopenshell": str(ifc.version)},
                 }
                 (stage / PUBLICATION_MANIFEST).write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
                 if not _source_unchanged(safe_path, source_stream, source_before, source_hash):
@@ -374,6 +416,8 @@ def _extract_pipeline(
                     artifact_filenames=(PUBLICATION_ARTIFACT, PUBLICATION_MANIFEST),
                     source_sha256=source_hash,
                     extraction_sha256=extraction_hash,
+                    **pre_fields,
+                    **{key: value for key, value in post_fields.items() if key != "diagnostics" or value},
                 )
             finally:
                 shutil.rmtree(stage, ignore_errors=True)

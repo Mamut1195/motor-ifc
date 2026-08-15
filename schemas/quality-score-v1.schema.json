@@ -1,0 +1,434 @@
+{
+  "$defs": {
+    "CoverageBucket": {
+      "additionalProperties": false,
+      "properties": {
+        "covered": {
+          "default": 0,
+          "title": "Covered",
+          "type": "integer"
+        },
+        "percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Percent"
+        },
+        "total": {
+          "default": 0,
+          "title": "Total",
+          "type": "integer"
+        }
+      },
+      "title": "CoverageBucket",
+      "type": "object"
+    },
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "integer"
+        },
+        "global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Global Id"
+        },
+        "ifc_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ifc Class"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Json Pointer"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Id"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "suggested_action": {
+          "title": "Suggested Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "stage",
+        "message",
+        "suggested_action"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "QualityCoverage": {
+      "additionalProperties": false,
+      "description": "How much of what should be measurable actually is.\n\nThe headline is `coverage_percent` over `structural`, `countable` and `container`.\n`ambiguous` is reported beside it, never inside it: `IfcBuildingElementProxy` is a\ncoordinate marker in one file and roof trim in the next, and no structural signal\nseparates them, so the operator decides rather than the engine guessing.\n`non_geometric` elements are excluded outright \u2014 they have nothing to measure.",
+      "properties": {
+        "ambiguous": {
+          "$ref": "#/$defs/CoverageBucket",
+          "default": {
+            "covered": 0,
+            "percent": null,
+            "total": 0
+          }
+        },
+        "billable_covered": {
+          "default": 0,
+          "title": "Billable Covered",
+          "type": "integer"
+        },
+        "billable_total": {
+          "default": 0,
+          "title": "Billable Total",
+          "type": "integer"
+        },
+        "container": {
+          "$ref": "#/$defs/CoverageBucket",
+          "default": {
+            "covered": 0,
+            "percent": null,
+            "total": 0
+          }
+        },
+        "countable": {
+          "$ref": "#/$defs/CoverageBucket",
+          "default": {
+            "covered": 0,
+            "percent": null,
+            "total": 0
+          }
+        },
+        "coverage_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Coverage Percent"
+        },
+        "excluded_non_geometric": {
+          "default": 0,
+          "title": "Excluded Non Geometric",
+          "type": "integer"
+        },
+        "spatial": {
+          "$ref": "#/$defs/CoverageBucket",
+          "default": {
+            "covered": 0,
+            "percent": null,
+            "total": 0
+          }
+        },
+        "structural": {
+          "$ref": "#/$defs/CoverageBucket",
+          "default": {
+            "covered": 0,
+            "percent": null,
+            "total": 0
+          }
+        },
+        "uncovered_by_class": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/UncoveredGroup"
+          },
+          "title": "Uncovered By Class",
+          "type": "array"
+        }
+      },
+      "title": "QualityCoverage",
+      "type": "object"
+    },
+    "QualityIssue": {
+      "additionalProperties": false,
+      "description": "A model-quality finding. Data, not an operational diagnostic.\n\n``global_id`` is null on model-level findings \u2014 the ones that diagnose the file\nrather than one of its elements. ``measurability`` lets a consumer separate a wall\nthat should have been measured from a grouping node that never could be.",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Global Id"
+        },
+        "measurability": {
+          "anyOf": [
+            {
+              "enum": [
+                "structural",
+                "countable",
+                "container",
+                "ambiguous",
+                "non_geometric",
+                "spatial"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measurability"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ],
+          "title": "Severity",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "severity",
+        "message"
+      ],
+      "title": "QualityIssue",
+      "type": "object"
+    },
+    "UncoveredGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "ifc_class": {
+          "title": "Ifc Class",
+          "type": "string"
+        },
+        "measurability": {
+          "enum": [
+            "structural",
+            "countable",
+            "container",
+            "ambiguous",
+            "non_geometric",
+            "spatial"
+          ],
+          "title": "Measurability",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ifc_class",
+        "measurability",
+        "count"
+      ],
+      "title": "UncoveredGroup",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Score, verdict and codes.\n\n``refuses_generation`` is derived from ``verdict`` alone. ``score`` and\n``threshold`` are separate fields that no refusal reads: what a model cannot\nmeasure is refused by an error-severity code, never by this number (ADR 0011).",
+  "properties": {
+    "artifact_filenames": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Filenames",
+      "type": "array"
+    },
+    "contract_version": {
+      "const": "quality-score.v1",
+      "default": "quality-score.v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "coverage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/QualityCoverage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "diagnostics": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "error_codes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Error Codes",
+      "type": "array"
+    },
+    "error_messages": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Error Messages",
+      "type": "array"
+    },
+    "issues": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/QualityIssue"
+      },
+      "title": "Issues",
+      "type": "array"
+    },
+    "publication": {
+      "const": "none",
+      "default": "none",
+      "title": "Publication",
+      "type": "string"
+    },
+    "refuses_generation": {
+      "default": false,
+      "title": "Refuses Generation",
+      "type": "boolean"
+    },
+    "score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Score"
+    },
+    "success": {
+      "title": "Success",
+      "type": "boolean"
+    },
+    "threshold": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Threshold"
+    },
+    "total_issues": {
+      "default": 0,
+      "title": "Total Issues",
+      "type": "integer"
+    },
+    "verdict": {
+      "anyOf": [
+        {
+          "enum": [
+            "blocked",
+            "degraded",
+            "ok",
+            "not_audited",
+            "not_applicable"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Verdict"
+    },
+    "warning_codes": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Warning Codes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "success"
+  ],
+  "title": "QualityScoreResult",
+  "type": "object"
+}

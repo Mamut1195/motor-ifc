@@ -1,0 +1,617 @@
+{
+  "$defs": {
+    "Diagnostic": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "integer"
+        },
+        "global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Global Id"
+        },
+        "ifc_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ifc Class"
+        },
+        "json_pointer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Json Pointer"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "error",
+            "warning",
+            "info"
+          ],
+          "title": "Severity",
+          "type": "string"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Id"
+        },
+        "stage": {
+          "title": "Stage",
+          "type": "string"
+        },
+        "suggested_action": {
+          "title": "Suggested Action",
+          "type": "string"
+        }
+      },
+      "required": [
+        "severity",
+        "code",
+        "stage",
+        "message",
+        "suggested_action"
+      ],
+      "title": "Diagnostic",
+      "type": "object"
+    },
+    "ElementIndexRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Classification"
+        },
+        "decomposes_into": {
+          "default": 0,
+          "title": "Decomposes Into",
+          "type": "integer"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "global_id": {
+          "title": "Global Id",
+          "type": "string"
+        },
+        "ifc_class": {
+          "title": "Ifc Class",
+          "type": "string"
+        },
+        "material": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material"
+        },
+        "measurability": {
+          "default": "structural",
+          "enum": [
+            "structural",
+            "countable",
+            "container",
+            "ambiguous",
+            "non_geometric",
+            "spatial"
+          ],
+          "title": "Measurability",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "object_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Object Type"
+        },
+        "part_of_global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Part Of Global Id"
+        },
+        "properties": {
+          "additionalProperties": true,
+          "title": "Properties",
+          "type": "object"
+        },
+        "quantities": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ElementQuantity"
+          },
+          "title": "Quantities",
+          "type": "array"
+        },
+        "quantity_set_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quantity Set Name"
+        },
+        "quantity_source": {
+          "default": "fallback",
+          "enum": [
+            "base_quantity",
+            "vendor_quantity",
+            "caller_decision",
+            "existence",
+            "fallback"
+          ],
+          "title": "Quantity Source",
+          "type": "string"
+        },
+        "storey_global_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey Global Id"
+        },
+        "storey_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Storey Name"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tag"
+        }
+      },
+      "required": [
+        "global_id",
+        "ifc_class"
+      ],
+      "title": "ElementIndexRecord",
+      "type": "object"
+    },
+    "ElementIndexStorey": {
+      "additionalProperties": false,
+      "properties": {
+        "elevation": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Elevation"
+        },
+        "global_id": {
+          "title": "Global Id",
+          "type": "string"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        }
+      },
+      "required": [
+        "global_id"
+      ],
+      "title": "ElementIndexStorey",
+      "type": "object"
+    },
+    "ElementQuantity": {
+      "additionalProperties": false,
+      "description": "One measure of one element, selected by name from the best available set.\n\n``value`` is the number the file declares. ``normalized_value`` is that number in\nthe SI unit ``ifcopenshell.util.unit`` derives for the measure, or ``None`` when it\nis not derivable \u2014 never a guess. ``unit`` says what ``value`` is in, so a\nnormalized number never travels without its origin.",
+      "properties": {
+        "decided_by": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Decided By"
+        },
+        "dimension": {
+          "anyOf": [
+            {
+              "enum": [
+                "area",
+                "surface_area",
+                "volume",
+                "length",
+                "count",
+                "weight"
+              ],
+              "type": "string"
+            },
+            {
+              "enum": [
+                "floor_area",
+                "wall_area",
+                "ceiling_area",
+                "perimeter",
+                "height",
+                "volume"
+              ],
+              "type": "string"
+            }
+          ],
+          "title": "Dimension"
+        },
+        "normalized_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Normalized Value"
+        },
+        "selection_rank": {
+          "default": 0,
+          "title": "Selection Rank",
+          "type": "integer"
+        },
+        "source_quantity_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Quantity Name"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReaderUnit"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dimension",
+        "value"
+      ],
+      "title": "ElementQuantity",
+      "type": "object"
+    },
+    "ReaderUnit": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "prefix": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prefix"
+        },
+        "source": {
+          "enum": [
+            "quantity",
+            "project",
+            "unknown"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Symbol"
+        },
+        "unit_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit Type"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "ReaderUnit",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_filenames": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Artifact Filenames",
+      "type": "array"
+    },
+    "contract_version": {
+      "const": "element-index.v1",
+      "default": "element-index.v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "diagnostics": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Diagnostic"
+      },
+      "title": "Diagnostics",
+      "type": "array"
+    },
+    "duplicate_global_id_count": {
+      "default": 0,
+      "title": "Duplicate Global Id Count",
+      "type": "integer"
+    },
+    "element_types": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Element Types",
+      "type": "array"
+    },
+    "entities": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ElementIndexRecord"
+      },
+      "title": "Entities",
+      "type": "array"
+    },
+    "entity_count": {
+      "default": 0,
+      "title": "Entity Count",
+      "type": "integer"
+    },
+    "extraction_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Extraction Sha256"
+    },
+    "project_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project Name"
+    },
+    "publication": {
+      "default": "none",
+      "enum": [
+        "none",
+        "immutable-directory"
+      ],
+      "title": "Publication",
+      "type": "string"
+    },
+    "skipped_types": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Skipped Types",
+      "type": "array"
+    },
+    "source_schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Schema"
+    },
+    "source_sha256": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Sha256"
+    },
+    "storeys": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ElementIndexStorey"
+      },
+      "title": "Storeys",
+      "type": "array"
+    },
+    "success": {
+      "title": "Success",
+      "type": "boolean"
+    },
+    "truncated": {
+      "const": false,
+      "default": false,
+      "title": "Truncated",
+      "type": "boolean"
+    },
+    "unresolved_unit_scale_count": {
+      "default": 0,
+      "title": "Unresolved Unit Scale Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "success"
+  ],
+  "title": "ElementIndexResult",
+  "type": "object"
+}

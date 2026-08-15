@@ -11,7 +11,12 @@ from .diagnostics import DiagnosticCode, error
 from .federation import build as _build_federation
 from .identity import semantic_fingerprint
 from .ids_validation import validate as _validate_ids
-from .models import Capabilities, CompileContext, CompileResult, FederationResult, IdsValidationResult, InspectionResult, ModelAuditResult, ModelRepairResult, ReaderExtractionResult, ReaderExtractionResultV2, ValidationPolicy, ValidationResult, ViewerConversionResult
+from .element_index import Projection as ElementIndexProjection
+from .element_index import index as _index_ifc_elements
+from .quantity_evidence import collect as _collect_quantity_evidence
+from .models import Capabilities, CompileContext, CompileResult, ElementIndexResult, QuantityDecisions, QuantityEvidenceResult, FederationResult, IdsValidationResult, InspectionResult, ModelAuditResult, ModelRepairResult, QualityFacts, QualityScoreResult, ReaderExtractionResult, ReaderExtractionResultV2, ValidationPolicy, ValidationResult, ViewerConversionResult
+from .quality_score import derive_verdict as _derive_quality_verdict
+from .quality_score import score_index as _score_index
 from .model_repair import audit as _audit_ifc
 from .model_repair import repair as _repair_ifc
 from .reader_extraction import extract as _extract_ifc
@@ -23,7 +28,7 @@ _ADAPTER = TypeAdapter(AuthoringEnvelope)
 _ENGINE_VERSION = VERSION
 
 def capabilities() -> Capabilities:
-    return Capabilities(engine_version=_ENGINE_VERSION, contract_versions=("authoring.v1","ids-validation.v1","viewer-conversion.v1","process-supervision.v1","reader-extraction.v1","reader-extraction.v2","model-audit.v1","model-repair.v1"), validation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), compilation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), ifc_schemas=("IFC4",), ifcopenshell_available=importlib.util.find_spec("ifcopenshell") is not None,ids_validation_contract_versions=("ids-validation.v1",),ids_versions=("1.0",),ifctester_available=importlib.util.find_spec("ifctester") is not None,viewer_conversion_contract_versions=("viewer-conversion.v1",),viewer_formats=("glb-2.0",),supervision_contract_versions=("process-supervision.v1",),supervisor_default_workers=1,supervisor_max_workers=4,request_cancellation=True,reader_extraction_contract_versions=("reader-extraction.v1","reader-extraction.v2"),model_audit_contract_versions=("model-audit.v1",),model_repair_contract_versions=("model-repair.v1",))
+    return Capabilities(engine_version=_ENGINE_VERSION, contract_versions=("authoring.v1","ids-validation.v1","viewer-conversion.v1","process-supervision.v1","reader-extraction.v1","reader-extraction.v2","model-audit.v1","model-repair.v1","element-index.v1","quality-score.v1","quantity-evidence.v1","quantity-decisions.v1"), validation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), compilation_profiles=("building.architecture@1","building.structure@1","building.mep@1"), ifc_schemas=("IFC4",), ifcopenshell_available=importlib.util.find_spec("ifcopenshell") is not None,ids_validation_contract_versions=("ids-validation.v1",),ids_versions=("1.0",),ifctester_available=importlib.util.find_spec("ifctester") is not None,viewer_conversion_contract_versions=("viewer-conversion.v1",),viewer_formats=("glb-2.0",),supervision_contract_versions=("process-supervision.v1",),supervisor_default_workers=1,supervisor_max_workers=4,request_cancellation=True,reader_extraction_contract_versions=("reader-extraction.v1","reader-extraction.v2"),model_audit_contract_versions=("model-audit.v1",),model_repair_contract_versions=("model-repair.v1",),element_index_contract_versions=("element-index.v1",),quality_score_contract_versions=("quality-score.v1",),quantity_evidence_contract_versions=("quantity-evidence.v1",),quantity_decisions_contract_versions=("quantity-decisions.v1",))
 
 def _parse(snapshot: Any, policy: ValidationPolicy):
     if policy.warnings_as_errors:
@@ -96,6 +101,19 @@ def extract_ifc(path: str|Path) -> ReaderExtractionResult:
 
 def extract_ifc_semantic(path: str|Path, projection: Literal["rich","metadata","properties","quantities","materials"]="rich", output_dir: str|Path|None=None) -> ReaderExtractionResultV2:
     return _extract_ifc_semantic(path, projection, output_dir)
+
+def index_ifc_elements(path: str|Path, projection: ElementIndexProjection="index", output_dir: str|Path|None=None, decisions: QuantityDecisions|dict[str,Any]|None=None) -> ElementIndexResult:
+    ruling = None if decisions is None else (decisions if isinstance(decisions, QuantityDecisions) else QuantityDecisions.model_validate(decisions))
+    return _index_ifc_elements(path, projection, output_dir, ruling)
+
+def collect_quantity_evidence(path: str|Path) -> QuantityEvidenceResult:
+    return _collect_quantity_evidence(path)
+
+def score_ifc_quality(index: ElementIndexResult) -> QualityScoreResult:
+    return _score_index(index)
+
+def derive_quality_verdict(facts: QualityFacts | dict[str, Any]) -> QualityScoreResult:
+    return _derive_quality_verdict(facts if isinstance(facts, QualityFacts) else QualityFacts.model_validate(facts))
 
 def audit_ifc(path: str|Path) -> ModelAuditResult:
     return _audit_ifc(path)

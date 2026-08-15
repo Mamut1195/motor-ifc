@@ -1,0 +1,142 @@
+{
+  "$defs": {
+    "ElementGroupDecision": {
+      "additionalProperties": false,
+      "description": "A caller's ruling on whether a class of elements is work to be billed.",
+      "properties": {
+        "billable": {
+          "default": true,
+          "title": "Billable",
+          "type": "boolean"
+        },
+        "ifc_class": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Ifc Class",
+          "type": "string"
+        },
+        "object_type_contains": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Object Type Contains"
+        }
+      },
+      "required": [
+        "ifc_class"
+      ],
+      "title": "ElementGroupDecision",
+      "type": "object"
+    },
+    "QuantityNameDecision": {
+      "additionalProperties": false,
+      "description": "A caller's ruling on one quantity name.\n\nIt may only name what the file already declares. `dimension: null` says the name is not\na measurement at all \u2014 as load-bearing as a mapping, because it records that the name\nwas judged rather than overlooked.",
+      "properties": {
+        "applies_to": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 100,
+          "title": "Applies To",
+          "type": "array"
+        },
+        "dimension": {
+          "anyOf": [
+            {
+              "enum": [
+                "area",
+                "surface_area",
+                "volume",
+                "length",
+                "count",
+                "weight"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dimension"
+        },
+        "measure": {
+          "enum": [
+            "area",
+            "volume",
+            "length",
+            "count",
+            "weight"
+          ],
+          "title": "Measure",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "measure",
+        "name"
+      ],
+      "title": "QuantityNameDecision",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Caller-supplied authority over naming, never over numbers.\n\nThe caller is the authority here exactly as it is for IDS requirements: the engine\nvalidates and applies this document, and never generates, infers or repairs one. Not a\nsingle field of this contract is numeric, so a model filling it in has nowhere to put an\ninvented quantity \u2014 the value always comes from the file.",
+  "properties": {
+    "contract_version": {
+      "const": "quantity-decisions.v1",
+      "default": "quantity-decisions.v1",
+      "title": "Contract Version",
+      "type": "string"
+    },
+    "decided_by": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decided By"
+    },
+    "element_groups": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ElementGroupDecision"
+      },
+      "maxItems": 1000,
+      "title": "Element Groups",
+      "type": "array"
+    },
+    "quantity_names": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/QuantityNameDecision"
+      },
+      "maxItems": 1000,
+      "title": "Quantity Names",
+      "type": "array"
+    }
+  },
+  "title": "QuantityDecisions",
+  "type": "object"
+}

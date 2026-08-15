@@ -2,15 +2,18 @@
 from __future__ import annotations
 import json, math, os, sys
 from typing import Any, Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from ._version import VERSION
-from .api import build_federation, capabilities, compile_snapshot, convert_ifc_to_glb, extract_ifc, extract_ifc_semantic, inspect_ifc, audit_ifc, repair_ifc, validate_ids, validate_ifc, validate_snapshot
+from .api import build_federation, capabilities, collect_quantity_evidence, compile_snapshot, convert_ifc_to_glb, derive_quality_verdict, extract_ifc, extract_ifc_semantic, index_ifc_elements, inspect_ifc, audit_ifc, repair_ifc, validate_ids, validate_ifc, validate_snapshot
 from .ids_validation import MAX_IDS_BYTES, MAX_IFC_BYTES
-from .models import CompileContext, ValidationPolicy
+from .models import CompileContext, QuantityDecisions, ValidationPolicy
 from .security import UnsafePathError, rpc_input, rpc_output
 from .viewer_conversion import MAX_FILENAME_LENGTH
 from .reader_extraction import MAX_IFC_BYTES as MAX_READER_IFC_BYTES, extract as extract_reader
 MAX_RPC_LINE_BYTES=1_000_000
+#: A decision document is a ruling list, not a payload; five megabytes is the same bound
+#: the caller-supplied IDS carries.
+MAX_DECISIONS_BYTES=5_000_000
 
 class _IdsValidationParams(BaseModel):
     model_config=ConfigDict(extra="forbid")
@@ -32,6 +35,21 @@ class _ReaderExtractionV2Params(BaseModel):
     ifc_path: str=Field(min_length=1,max_length=500)
     projection: Literal["rich","metadata","properties","quantities","materials"]="rich"
     output_dir: str|None=Field(default=None,min_length=1,max_length=500)
+
+class _ElementIndexParams(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    ifc_path: str=Field(min_length=1,max_length=500)
+    projection: Literal["index","rich"]="index"
+    output_dir: str|None=Field(default=None,min_length=1,max_length=500)
+    decisions_path: str|None=Field(default=None,min_length=1,max_length=500)
+
+class _QuantityEvidenceParams(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    ifc_path: str=Field(min_length=1,max_length=500)
+
+class _QualityScoreParams(BaseModel):
+    model_config=ConfigDict(extra="forbid")
+    facts: dict[str,Any]
 
 class _ModelAuditParams(BaseModel):
     model_config=ConfigDict(extra="forbid")
@@ -89,6 +107,19 @@ def _reader_path_v2(params,job_root):
         return path,request.projection,output_dir
     except (UnsafePathError,OSError,TypeError): raise RpcFault(-32602,"Invalid or oversized reader input path")
 
+def _element_index_path(params,job_root):
+    if not job_root: raise RpcFault(-32602,"A configured job root is required")
+    request=_ElementIndexParams.model_validate(params)
+    try:
+        path=rpc_input(job_root,request.ifc_path,MAX_READER_IFC_BYTES)
+        output_dir=rpc_output(job_root,request.output_dir) if request.output_dir is not None else None
+        decisions=rpc_input(job_root,request.decisions_path,MAX_DECISIONS_BYTES) if request.decisions_path is not None else None
+    except (UnsafePathError,OSError,TypeError): raise RpcFault(-32602,"Invalid or oversized element index input path")
+    if decisions is None: return path,request.projection,output_dir,None
+    try: ruling=QuantityDecisions.model_validate_json(decisions.read_text(encoding="utf-8"))
+    except (ValidationError,OSError,UnicodeDecodeError,ValueError): raise RpcFault(-32602,"Invalid quantity decisions document",{"diagnostic_code":3201})
+    return path,request.projection,output_dir,ruling
+
 def dispatch(method:str,params:Any,job_root:str|None=None)->Any:
     if not isinstance(params,(dict,list)): raise RpcFault(-32602,"Invalid params")
     if method=="engine.capabilities.v1": return capabilities().model_dump(mode="json")
@@ -103,6 +134,19 @@ def dispatch(method:str,params:Any,job_root:str|None=None)->Any:
     if method=="reader.extract.v2":
         path,projection,output_dir=_reader_path_v2(params,job_root)
         return extract_ifc_semantic(path,projection,output_dir).model_dump(mode="json")
+    if method=="element.index.v1":
+        path,projection,output_dir,decisions=_element_index_path(params,job_root)
+        return index_ifc_elements(path,projection,output_dir,decisions).model_dump(mode="json")
+    if method=="quantity.evidence.v1":
+        if not job_root: raise RpcFault(-32602,"A configured job root is required")
+        request=_QuantityEvidenceParams.model_validate(params)
+        try: ifc_path=rpc_input(job_root,request.ifc_path,MAX_READER_IFC_BYTES)
+        except (UnsafePathError,OSError,TypeError): raise RpcFault(-32602,"Invalid or oversized evidence input path")
+        return collect_quantity_evidence(ifc_path).model_dump(mode="json")
+    if method=="quality.score.v1":
+        request=_QualityScoreParams.model_validate(params)
+        try: return derive_quality_verdict(request.facts).model_dump(mode="json")
+        except ValidationError: raise RpcFault(-32602,"Invalid quality facts")
     if method=="model.audit.v1":
         if not job_root: raise RpcFault(-32602,"A configured job root is required")
         request=_ModelAuditParams.model_validate(params)

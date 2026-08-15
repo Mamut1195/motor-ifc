@@ -28,6 +28,12 @@ class DiagnosticCode(IntEnum):
     MODEL_AUDIT_FAILED = 2900
     MODEL_REPAIR_FAILED = 2901
     MODEL_NOT_REPAIRABLE = 2902
+    ELEMENT_INDEX_FAILED = 3000
+    UNRESOLVED_UNIT_SCALE = 3001
+    QUALITY_SCORE_FAILED = 3100
+    QUANTITY_EVIDENCE_FAILED = 3200
+    INVALID_QUANTITY_DECISIONS = 3201
+    UNMATCHED_QUANTITY_DECISION = 3202
 
 class Diagnostic(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -43,3 +49,13 @@ class Diagnostic(BaseModel):
 
 def error(code: DiagnosticCode, stage: str, message: str, action: str, **context: object) -> Diagnostic:
     return Diagnostic(severity="error", code=int(code), stage=stage, message=message, suggested_action=action, **context)
+
+def warning(code: DiagnosticCode, stage: str, message: str, action: str, **context: object) -> Diagnostic:
+    """A successful operation reporting something the caller must not ignore.
+
+    Reserved for facts an operation can state truthfully but cannot resolve, where
+    silence would read as "nothing to see". `element-index.v1` uses it for a
+    quantity whose unit will not normalize: dropping the SI value without saying so
+    is the failure mode that produces order-of-magnitude errors no later check finds.
+    """
+    return Diagnostic(severity="warning", code=int(code), stage=stage, message=message, suggested_action=action, **context)
