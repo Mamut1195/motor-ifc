@@ -1,0 +1,7 @@
+# Corpus bytes are pinned by SHA-256 in corpus/MANIFEST.json, so any end-of-line
+# normalisation changes the hash and makes the immutability ADR 0010 claims false on a
+# fresh clone. A Windows checkout converts LF to CRLF by default: measured, that turned
+# b01-pcert-ifc4's pinned e390f9f9... into 331ceb86... and failed CI on every commit while
+# every developer working copy stayed green, because a working copy is never re-converted.
+*.ifc                  -text
+corpus/expected/*.json -text
